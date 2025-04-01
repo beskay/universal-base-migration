@@ -1,0 +1,104 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-size-small: 0.875rem;
+  --font-size-medium: 1rem;
+  --font-size-large: 1.25rem;
+  --font-size-base: 16px;
+}
+
+@layer base {
+  html {
+    @apply bg-background text-foreground;
+    font-size: var(--font-size-base);
+  }
+  
+  @media (max-width: 640px) {
+    html {
+      --font-size-base: 14px;
+    }
+  }
+
+  body {
+    @apply font-sans antialiased;
+  }
+
+  h1 {
+    @apply text-h1 font-bold;
+  }
+
+  h2 {
+    @apply text-h2 font-bold;
+  }
+
+  h3 {
+    @apply text-h3 font-medium;
+  }
+}
+
+@layer components {
+  .window {
+    @apply bg-white/60 dark:bg-[#282828]/80 border border-black/5 dark:border-white/10 rounded-lg shadow-window;
+  }
+
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed text-base;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary text-white hover:bg-primary/90 focus:ring-primary/50;
+  }
+
+  .btn-secondary {
+    @apply btn border-2 border-secondary text-secondary hover:bg-secondary/10 focus:ring-secondary/50;
+  }
+
+  .btn-ghost {
+    @apply btn text-secondary hover:bg-secondary/10 focus:ring-secondary/50;
+  }
+
+  .input {
+    @apply w-full px-4 py-2 rounded-lg border border-foreground/10 bg-white/60 
+           focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
+           disabled:opacity-50 disabled:cursor-not-allowed text-base;
+  }
+
+  .label {
+    @apply text-sm font-medium text-secondary;
+  }
+
+  .text-value {
+    @apply text-sm font-mono text-foreground/80;
+  }
+
+  .icon {
+    @apply stroke-[1.5px];
+  }
+
+  .icon-sm {
+    @apply w-4 h-4;
+  }
+
+  .icon-md {
+    @apply w-5 h-5;
+  }
+
+  .icon-lg {
+    @apply w-6 h-6;
+  }
+}
+
+/* Remove default styles */
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+} 
