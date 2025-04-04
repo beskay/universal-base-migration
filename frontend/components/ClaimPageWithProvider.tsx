@@ -1,72 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Navigation from './Navigation';
 import Button from './Button';
 import Card from './Card';
-import supabase, { getMerkleProof } from '../lib/supabase';
 import { formatAddress } from '../lib/walletUtils';
-import { useAccount, useDisconnect, useContractWrite, usePrepareContractWrite, UsePrepareContractWriteConfig, useContractRead } from 'wagmi';
+import { formatEther, parseEther } from 'viem';
+import { useAccount, useDisconnect } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { configureChains, createConfig, WagmiConfig } from 'wagmi';
-import { base } from '@wagmi/chains';
-import { publicProvider } from 'wagmi/providers/public';
-import { alchemyProvider } from 'wagmi/providers/alchemy';
-import { infuraProvider } from 'wagmi/providers/infura';
-import { UOS_ABI, UOS_CONTRACT_ADDRESS } from '../lib/contracts/UOS';
-import { parseEther, formatEther } from 'viem';
-import { 
-  RainbowKitProvider, 
-  connectorsForWallets,
-  lightTheme
-} from '@rainbow-me/rainbowkit';
-import {
-  metaMaskWallet,
-  coinbaseWallet,
-  walletConnectWallet,
-  trustWallet,
-  rainbowWallet,
-  braveWallet,
-  ledgerWallet
-} from '@rainbow-me/rainbowkit/wallets';
-import '@rainbow-me/rainbowkit/styles.css';
+import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
+import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
+import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
+import { AIRCADE_ABI, AIRCADE_CONTRACT_ADDRESS } from '../lib/contracts/AIRcade';
+import { useVerifyProof } from '../hooks/useVerifyProof';
 
 // This is a placeholder - replace with your actual project ID from WalletConnect Cloud
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
 if (!projectId) throw new Error('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is required');
-
-// Configure chains & providers with multiple fallback providers
-const { chains, publicClient } = configureChains(
-  [base], // Only using Base network
-  [
-    // Use multiple providers for better reliability
-    infuraProvider({ apiKey: process.env.NEXT_PUBLIC_INFURA_ID }), // Infura API key
-    publicProvider()
-  ]
-);
-
-// Set up custom wallet list
-const connectors = connectorsForWallets([
-  {
-    groupName: 'Popular',
-    wallets: [
-      metaMaskWallet({ projectId, chains }),
-      coinbaseWallet({ appName: 'AIRcade Token Claim', chains }),
-      walletConnectWallet({ projectId, chains }),
-      trustWallet({ projectId, chains }),
-      rainbowWallet({ projectId, chains }),
-      braveWallet({ chains }),
-      ledgerWallet({ projectId, chains })
-    ],
-  }
-]);
-
-// Set up wagmi config
-const config = createConfig({
-  autoConnect: false, // Changed to false to prevent auto-connecting on page load
-  publicClient,
-  connectors
-});
 
 // The actual claim form component
 const ClaimForm = () => {
@@ -74,7 +24,7 @@ const ClaimForm = () => {
   const { disconnect } = useDisconnect();
   
   // Add logging to verify contract address
-  console.log('Using contract address:', UOS_CONTRACT_ADDRESS);
+  console.log('Using contract address:', AIRCADE_CONTRACT_ADDRESS);
   
   const [claimStatus, setClaimStatus] = useState<'idle' | 'checking' | 'eligible' | 'ineligible' | 'claiming' | 'claimed' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -83,8 +33,8 @@ const ClaimForm = () => {
 
   // Check if address has already claimed
   const { data: hasClaimed } = useContractRead({
-    address: UOS_CONTRACT_ADDRESS,
-    abi: UOS_ABI,
+    address: AIRCADE_CONTRACT_ADDRESS,
+    abi: AIRCADE_ABI,
     functionName: 'claimed',
     args: evmWallet ? [evmWallet] : undefined,
     enabled: Boolean(evmWallet),
@@ -92,8 +42,8 @@ const ClaimForm = () => {
 
   // Prepare the contract write configuration
   const { config: contractConfig } = usePrepareContractWrite({
-    address: UOS_CONTRACT_ADDRESS,
-    abi: UOS_ABI,
+    address: AIRCADE_CONTRACT_ADDRESS,
+    abi: AIRCADE_ABI,
     functionName: 'claim',
     args: evmWallet && airdropAmount && merkleProof ? [
       evmWallet,
@@ -433,45 +383,35 @@ const ClaimPageWithProvider = () => {
   }
 
   return (
-    <WagmiConfig config={config}>
-      <RainbowKitProvider 
-        chains={chains} 
-        theme={lightTheme({
-          accentColor: '#3b82f6',
-          accentColorForeground: 'white',
-          borderRadius: 'medium',
-          fontStack: 'system'
-        })}
-        modalSize="compact"
-      >
-        <div className="min-h-screen bg-gray-50">
-          <Head>
-            <title>Claim AIRcade Tokens</title>
-            <meta name="description" content="Verify your eligibility and claim your AIRcade tokens" />
-            <link rel="icon" href="/favicon.ico" />
-          </Head>
+    <div className="min-h-screen bg-gray-50">
+      <Head>
+        <title>Claim AIRcade Tokens</title>
+        <meta name="description" content="Verify your eligibility and claim your AIRcade tokens" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
 
-          <Navigation />
+      <Navigation />
 
-          <main className="max-w-5xl mx-auto mt-8 md:-mt-32">
-            <div className="text-center mb-8 md:mb-12 animate-fadeIn">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Claim AIRcade Tokens</h1>
-              <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-                Verify your eligibility and claim your AIRcade tokens based on the merkle proof.
-              </p>
-            </div>
-
-            <div className="max-w-2xl mx-auto animate-slideIn px-4">
-              <ClaimForm />
-            </div>
-          </main>
-
-          <footer className="mt-12 text-center pb-8">
-            <p className="text-xl font-bold text-gray-900">AIRcade</p>
-          </footer>
+      <main className="max-w-5xl mx-auto mt-8 md:-mt-32">
+        <div className="text-center mb-8 md:mb-12 animate-fadeIn">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Claim AIRcade Tokens</h1>
+          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+            Verify your eligibility and claim your AIRcade tokens based on the merkle proof.
+          </p>
         </div>
-      </RainbowKitProvider>
-    </WagmiConfig>
+
+        <div className="max-w-2xl mx-auto animate-slideIn px-4">
+          <ClaimForm />
+        </div>
+      </main>
+
+      <footer className="mt-12 text-center pb-8">
+        <p className="text-xl font-bold text-gray-900">AIRcade</p>
+        <p className="mt-2 text-gray-800 font-mono text-xs md:text-sm tracking-[0.15em]">
+          - Designed by <a href="https://x.com/__U_O_S__" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 transition-colors duration-200">🐬</a> -
+        </p>
+      </footer>
+    </div>
   );
 };
 
