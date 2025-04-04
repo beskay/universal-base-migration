@@ -16,7 +16,7 @@ import {
   isProperEvmWalletAvailable,
   isPhantomEVM
 } from '../lib/walletUtils';
-import { hasUosBalance, getUosBalance } from '../lib/solanaUtils';
+import { hasAIRcadeBalance, getAIRcadeBalance } from '../lib/solanaUtils';
 
 export default function Home() {
   // Set up state without Privy
@@ -52,13 +52,13 @@ export default function Home() {
   // Fetch uOS balance when Solana wallet is connected
   useEffect(() => {
     if (solanaWallet) {
-      const fetchUosBalance = async () => {
+      const fetchAIRcadeBalance = async () => {
         setIsLoadingBalance(true);
         try {
-          const balance = await getUosBalance(solanaWallet);
+          const balance = await getAIRcadeBalance(solanaWallet);
           setUosBalance(balance);
         } catch (error) {
-          console.error('Error fetching uOS balance:', error);
+          console.error('Error fetching AIRcade balance:', error);
           setUosBalance(null);
           setErrorMessage('Failed to fetch AIRcade balance. Please try again later.');
         } finally {
@@ -66,7 +66,7 @@ export default function Home() {
         }
       };
       
-      fetchUosBalance();
+      fetchAIRcadeBalance();
     } else {
       setUosBalance(null);
     }
@@ -183,7 +183,7 @@ export default function Home() {
       // Check if the Solana wallet has a uOS balance > 0 to prevent spam
       let hasBalance = false;
       try {
-        hasBalance = await hasUosBalance(solanaWallet);
+        hasBalance = await hasAIRcadeBalance(solanaWallet);
       } catch (error) {
         console.error('Error checking uOS balance:', error);
         setErrorMessage('Failed to verify AIRcade balance. Please try again later.');
