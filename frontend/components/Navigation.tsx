@@ -14,22 +14,7 @@ export default function Navigation() {
       <nav className="fixed top-0 left-0 right-0 z-10 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center">
-            <a 
-              href="https://www.uos.earth" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="transition-transform hover:scale-105 relative"
-            >
-              <div 
-                className="w-32 h-32 md:w-64 md:h-64 overflow-hidden rounded-full bg-black"
-              >
-                <img 
-                  src="/new-logo.jpeg" 
-                  alt="Logo" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </a>
+            {/* Logo removed */}
           </div>
           
           <div className="flex space-x-2">
@@ -85,8 +70,8 @@ export default function Navigation() {
           </div>
         </div>
       </nav>
-      {/* Spacer div to prevent content from being hidden under the nav */}
-      <div className="h-40 md:h-72 w-full"></div>
+      {/* Spacer div reduced size since logo is removed */}
+      <div className="h-16 w-full"></div>
     </>
   );
 } 

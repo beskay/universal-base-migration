@@ -472,10 +472,6 @@ const ClaimPageWithProvider = () => {
               alt="UOS" 
               className="h-9 mx-auto"
             />
-            <div className="mt-4 space-x-4 text-sm">
-              <a href="https://uos.earth" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-accent">uos.earth</a>
-              <a href="https://uos.agency" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-accent">uos.agency</a>
-            </div>
           </footer>
         </div>
       </RainbowKitProvider>

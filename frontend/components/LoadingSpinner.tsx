@@ -16,21 +16,18 @@ export default function LoadingSpinner({ size = 'md', className = '', style }: L
   return (
     <div 
       className={`
-        relative overflow-hidden rounded-full bg-white
+        relative overflow-hidden rounded-full 
+        border-4 border-gray-200 border-t-blue-500
         animate-spin
         ${sizeStyles[size]}
         ${className}
       `}
       style={{
         ...style,
-        animationDuration: '2s',
+        animationDuration: '1s',
       }}
     >
-      <img 
-        src="/new-logo.jpeg" 
-        alt="Loading..." 
-        className="w-full h-full object-cover"
-      />
+      {/* Simple spinner with no image */}
     </div>
   );
 } 

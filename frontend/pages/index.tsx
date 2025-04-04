@@ -535,10 +535,6 @@ export default function Home() {
       <footer className="mt-16 text-center text-sm text-gray-500 pb-16">
         <p>Airdrop System © 2025</p>
         <p className="mt-2 text-gray-800 font-mono text-xs md:text-sm tracking-[0.15em]">- Designed by 🐬 -</p>
-        <div className="mt-4 space-x-4 text-sm">
-          <a href="https://uos.earth" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">uos.earth</a>
-          <a href="https://uos.agency" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">uos.agency</a>
-        </div>
       </footer>
 
       {/* Warning Modal */}

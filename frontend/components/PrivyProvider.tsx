@@ -65,7 +65,6 @@ export default function PrivyProvider({ children }: PrivyProviderProps) {
           appearance: {
             theme: 'light',
             accentColor: '#3b82f6', // primary color
-            logo: '/new-logo.jpeg'
           },
           embeddedWallets: {
             createOnLogin: 'all-users',
