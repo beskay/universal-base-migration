@@ -3,7 +3,6 @@ import Head from 'next/head';
 import Navigation from '../components/Navigation';
 import Button from '../components/Button';
 import Card from '../components/Card';
-import MerkleAnimation from '../components/MerkleAnimation';
 import { AnimatedShinyText } from '../components/AnimatedShinyText';
 import WarningModal from '../components/WarningModal';
 import Toggle from '../components/Toggle';
@@ -29,7 +28,6 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isConnectingSolana, setIsConnectingSolana] = useState(false);
   const [isConnectingEVM, setIsConnectingEVM] = useState(false);
-  const [showMerkleAnimation, setShowMerkleAnimation] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [isManualMode, setIsManualMode] = useState(false);
   const [uosBalance, setUosBalance] = useState<number | null>(null);
@@ -73,15 +71,6 @@ export default function Home() {
       setUosBalance(null);
     }
   }, [solanaWallet]);
-
-  // Handle Merkle animation
-  const handleMerkleAnimation = () => {
-    setShowMerkleAnimation(true);
-  };
-
-  const handleAnimationComplete = () => {
-    setShowMerkleAnimation(false);
-  };
 
   // Function to connect Solana wallet directly using Phantom
   const connectSolanaWallet = async () => {
@@ -272,43 +261,6 @@ export default function Home() {
           Reset Wallets
         </button>
       </div>
-
-      {/* Merkle-me button - Fixed position (desktop always, mobile always at bottom left) */}
-      <div 
-        className={`
-          fixed bottom-4 left-4 sm:bottom-8 sm:left-8
-          flex justify-start flex-none z-50
-        `}
-        data-merkle-button
-      >
-        <button 
-          onClick={handleMerkleAnimation}
-          className="group bg-primary hover:bg-primary/90 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg transition-all duration-300 flex items-center space-x-2 
-          shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-1
-          relative overflow-hidden animate-pulse scale-75 sm:scale-100"
-          style={{
-            boxShadow: '0 0 15px 5px rgba(59, 130, 246, 0.35), 0 0 8px 2px rgba(59, 130, 246, 0.5)',
-            animationDuration: '3s'
-          }}
-        >
-          <span className="relative z-10 font-mono text-gray-800 text-xs sm:text-sm">merkle-me</span>
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className="relative z-10 h-4 w-4 sm:h-5 sm:w-5 transform transition-transform duration-200 group-hover:translate-x-1" 
-            viewBox="0 0 20 20" 
-            fill="currentColor"
-          >
-            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-          <div className="absolute inset-0 bg-blue-400 opacity-40 group-hover:opacity-60 blur-xl transition-opacity duration-300"></div>
-        </button>
-      </div>
-
-      {/* Merkle Tree Animation */}
-      <MerkleAnimation 
-        isVisible={showMerkleAnimation} 
-        onAnimationComplete={handleAnimationComplete} 
-      />
 
       <main className="max-w-4xl mx-auto">
         <div className="text-center mb-8 animate-fadeIn">
