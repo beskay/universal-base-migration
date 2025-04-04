@@ -60,7 +60,7 @@ export default function Home() {
         } catch (error) {
           console.error('Error fetching uOS balance:', error);
           setUosBalance(null);
-          setErrorMessage('Failed to fetch UOS balance. Please try again later.');
+          setErrorMessage('Failed to fetch AIRcade balance. Please try again later.');
         } finally {
           setIsLoadingBalance(false);
         }
@@ -186,13 +186,13 @@ export default function Home() {
         hasBalance = await hasUosBalance(solanaWallet);
       } catch (error) {
         console.error('Error checking uOS balance:', error);
-        setErrorMessage('Failed to verify uOS balance. Please try again later.');
+        setErrorMessage('Failed to verify AIRcade balance. Please try again later.');
         setRegistrationStatus('error');
         return;
       }
 
       if (!hasBalance) {
-        setErrorMessage('You need to have a uOS balance to register for the airdrop.');
+        setErrorMessage('You need to have a AIRcade balance to register for the airdrop.');
         setRegistrationStatus('error');
         return;
       }
@@ -267,7 +267,7 @@ export default function Home() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Airdrop Registration</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Connect your Solana and EVM wallets to register for the airdrop. 
-            After registration, you will be eligible to claim your WETH airdrop based on your UOS holdings.
+            After registration, you will be eligible to claim your WETH airdrop based on your AIRcade holdings.
           </p>
         </div>
 
@@ -329,14 +329,14 @@ export default function Home() {
                     {solanaWallet && (
                       <div className="mt-2">
                         <div className="text-xs text-gray-500">
-                          uOS Balance:
+                          AIRcade Balance:
                         </div>
                         <div className="text-sm font-medium">
                           {isLoadingBalance ? (
                             <span className="text-gray-400">Loading...</span>
                           ) : uosBalance !== null ? (
                             <span className="text-emerald-600">
-                              {uosBalance} UOS
+                              {uosBalance} AIRcade
                             </span>
                           ) : (
                             <span className="text-gray-400">Checking balance...</span>
@@ -429,14 +429,14 @@ export default function Home() {
                     {solanaWallet && (
                       <div className="mt-2">
                         <div className="text-xs text-gray-500">
-                          uOS Balance:
+                          AIRcade Balance:
                         </div>
                         <div className="text-sm font-medium">
                           {isLoadingBalance ? (
                             <span className="text-gray-400">Loading...</span>
                           ) : uosBalance !== null ? (
                             <span className={`${uosBalance > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                              {uosBalance} UOS {uosBalance === 0 && '(Not eligible)'}
+                              {uosBalance} AIRcade {uosBalance === 0 && '(Not eligible)'}
                             </span>
                           ) : (
                             <span className="text-red-500">Error loading balance</span>

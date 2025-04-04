@@ -32,7 +32,7 @@ import {
 import '@rainbow-me/rainbowkit/styles.css';
 
 // This is a placeholder - replace with your actual project ID from WalletConnect Cloud
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
 if (!projectId) throw new Error('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is required');
 
 // Configure chains & providers with multiple fallback providers
@@ -51,7 +51,7 @@ const connectors = connectorsForWallets([
     groupName: 'Popular',
     wallets: [
       metaMaskWallet({ projectId, chains }),
-      coinbaseWallet({ appName: 'UOS Token Claim', chains }),
+      coinbaseWallet({ appName: 'AIRcade Token Claim', chains }),
       walletConnectWallet({ projectId, chains }),
       trustWallet({ projectId, chains }),
       rainbowWallet({ projectId, chains }),
@@ -317,7 +317,7 @@ const ClaimForm = () => {
           </div>
           <h3 className="text-xl font-bold text-yellow-800">Not Eligible</h3>
           <p className="text-yellow-700 mt-2">
-            Your wallet is not eligible for the UOS token claim.
+            Your wallet is not eligible for the AIRcade token claim.
             This could be because you didn't register in time or your eligibility couldn't be verified.
           </p>
           <div className="mt-6">
@@ -340,7 +340,7 @@ const ClaimForm = () => {
             </div>
             <h3 className="text-xl font-bold text-green-800">Eligible for Claim!</h3>
             <p className="text-green-700 mt-2">
-              You are eligible to claim <span className="font-bold">{airdropAmount ? formatEther(BigInt(airdropAmount)) : '0'}</span> UOS tokens.
+              You are eligible to claim <span className="font-bold">{airdropAmount ? formatEther(BigInt(airdropAmount)) : '0'}</span> AIRcade tokens.
             </p>
           </Card>
           
@@ -384,7 +384,7 @@ const ClaimForm = () => {
           </div>
           <h3 className="text-xl font-bold text-green-800">Tokens Claimed!</h3>
           <p className="text-green-700 mt-2">
-            You have successfully claimed your UOS tokens.
+            You have successfully claimed your AIRcade tokens.
             The tokens should appear in your wallet shortly.
           </p>
         </Card>
@@ -446,8 +446,8 @@ const ClaimPageWithProvider = () => {
       >
         <div className="min-h-screen bg-gray-50">
           <Head>
-            <title>Claim UOS Tokens</title>
-            <meta name="description" content="Verify your eligibility and claim your UOS tokens" />
+            <title>Claim AIRcade Tokens</title>
+            <meta name="description" content="Verify your eligibility and claim your AIRcade tokens" />
             <link rel="icon" href="/favicon.ico" />
           </Head>
 
@@ -455,9 +455,9 @@ const ClaimPageWithProvider = () => {
 
           <main className="max-w-5xl mx-auto mt-8 md:-mt-32">
             <div className="text-center mb-8 md:mb-12 animate-fadeIn">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Claim UOS Tokens</h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Claim AIRcade Tokens</h1>
               <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-                Verify your eligibility and claim your UOS tokens based on the merkle proof.
+                Verify your eligibility and claim your AIRcade tokens based on the merkle proof.
               </p>
             </div>
 
@@ -467,11 +467,7 @@ const ClaimPageWithProvider = () => {
           </main>
 
           <footer className="mt-12 text-center pb-8">
-            <img 
-              src="/uos-text.jpeg" 
-              alt="UOS" 
-              className="h-9 mx-auto"
-            />
+            <p className="text-xl font-bold text-gray-900">AIRcade</p>
           </footer>
         </div>
       </RainbowKitProvider>
