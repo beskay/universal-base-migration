@@ -1,4 +1,3 @@
-import { usePrivy } from '@privy-io/react-auth';
 import { useEffect, useState } from 'react';
 import Head from 'next/head';
 import Navigation from '../components/Navigation';
@@ -16,13 +15,12 @@ import {
   connectProperEvmWallet,
   isPhantomInstalled,
   isProperEvmWalletAvailable,
-  isPhantomEVM,
-  blockPhantomEVM
+  isPhantomEVM
 } from '../lib/walletUtils';
 import { hasUosBalance, getUosBalance } from '../lib/solanaUtils';
 
 export default function Home() {
-  const { login, ready, authenticated, user, logout } = usePrivy();
+  // Set up state without Privy
   const [solanaWallet, setSolanaWallet] = useState<string | null>(null);
   const [evmWallet, setEvmWallet] = useState<string | null>(null);
   const [manualSolanaWallet, setManualSolanaWallet] = useState<string>('');
@@ -41,28 +39,17 @@ export default function Home() {
     evmWalletAvailable: false
   });
 
-  // Check for wallet availability on mount
+  // Check for wallet availability on mount - safely wrapped
   useEffect(() => {
-    setWalletStatus({
-      phantomInstalled: isPhantomInstalled(),
-      evmWalletAvailable: isProperEvmWalletAvailable()
-    });
-  }, []);
-
-  // Check for connected wallets when user is authenticated
-  useEffect(() => {
-    if (authenticated && user) {
-      // Get linked accounts
-      const linkedAccounts = user.linkedAccounts || [];
-      
-      // ONLY look for Solana wallets in Privy
-      linkedAccounts.forEach((account: any) => {
-        if (account.type === 'wallet' && account.walletClientType === 'solana') {
-          setSolanaWallet(account.address);
-        }
+    try {
+      setWalletStatus({
+        phantomInstalled: isPhantomInstalled(),
+        evmWalletAvailable: isProperEvmWalletAvailable()
       });
+    } catch (error) {
+      console.error("Error checking wallet availability:", error);
     }
-  }, [authenticated, user]);
+  }, []);
 
   // Fetch uOS balance when Solana wallet is connected
   useEffect(() => {
@@ -87,11 +74,14 @@ export default function Home() {
     }
   }, [solanaWallet]);
 
-  // Block Phantom EVM on component mount
-  useEffect(() => {
-    // Block Phantom's EVM provider as early as possible
-    blockPhantomEVM();
-  }, []);
+  // Handle Merkle animation
+  const handleMerkleAnimation = () => {
+    setShowMerkleAnimation(true);
+  };
+
+  const handleAnimationComplete = () => {
+    setShowMerkleAnimation(false);
+  };
 
   // Function to connect Solana wallet directly using Phantom
   const connectSolanaWallet = async () => {
@@ -105,26 +95,19 @@ export default function Home() {
       setIsConnectingSolana(true);
       setErrorMessage(null);
       
-      const solana = (window as any).solana;
-      
-      if (!solana || !solana.isPhantom) {
-        setErrorMessage('Phantom wallet is not installed');
-        return;
+      const wallet = await connectPhantom();
+      if (wallet) {
+        setSolanaWallet(wallet);
       }
-      
-      try {
-        const response = await solana.connect();
-        setSolanaWallet(response.publicKey.toString());
-      } catch (error) {
-        console.error('Error connecting to Phantom:', error);
-        setErrorMessage(handleWalletError(error));
-      }
+    } catch (error) {
+      console.error('Error connecting to Phantom:', error);
+      setErrorMessage(handleWalletError(error));
     } finally {
       setIsConnectingSolana(false);
     }
   };
 
-  // Function to connect EVM wallet directly (not using Phantom)
+  // Function to connect EVM wallet
   const connectEvmWallet = async () => {
     setShowWarningModal(true);
   };
@@ -134,41 +117,9 @@ export default function Home() {
       setIsConnectingEVM(true);
       setErrorMessage(null);
       
-      // Get the current ethereum provider
-      const ethereum = (window as any).ethereum;
-      
-      // Strict checks to ensure we're not using Phantom's EVM
-      if (!ethereum) {
-        setErrorMessage('No EVM wallet detected. Please install MetaMask.');
-        return;
-      }
-      
-      // Use the enhanced isPhantomEVM function from walletUtils
-      if (isPhantomEVM(ethereum)) {
-        setErrorMessage('Please use MetaMask or another dedicated EVM wallet. Phantom\'s EVM wallet is not supported.');
-        return;
-      }
-      
-      // Additional check for proper EVM wallet
-      if (!ethereum.isMetaMask && !ethereum.isCoinbaseWallet) {
-        setErrorMessage('Please use MetaMask or Coinbase Wallet for EVM connections.');
-        return;
-      }
-      
-      // Call our blockPhantomEVM function which now marks providers instead of deleting them
-      blockPhantomEVM();
-      
-      // Request accounts from the proper EVM wallet
-      const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-      
-      // Double check after connection that we didn't somehow connect to Phantom
-      if (isPhantomEVM(ethereum)) {
-        setErrorMessage('Phantom\'s EVM wallet is not supported. Please use MetaMask or another dedicated EVM wallet.');
-        return;
-      }
-      
-      if (accounts && accounts.length > 0) {
-        setEvmWallet(accounts[0]);
+      const address = await connectProperEvmWallet();
+      if (address) {
+        setEvmWallet(address);
       }
     } catch (error) {
       console.error('Error connecting EVM wallet:', error);
@@ -198,11 +149,6 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error disconnecting from Phantom:', error);
-    }
-    
-    // Disconnect from Privy
-    if (authenticated) {
-      await logout();
     }
     
     // Reload the page to ensure a clean state
@@ -250,53 +196,50 @@ export default function Home() {
       try {
         hasBalance = await hasUosBalance(solanaWallet);
       } catch (error) {
-        console.error('Error checking UOS balance:', error);
-        setErrorMessage('Failed to verify UOS balance. Please try again later.');
+        console.error('Error checking uOS balance:', error);
+        setErrorMessage('Failed to verify uOS balance. Please try again later.');
         setRegistrationStatus('error');
         return;
       }
-      
+
       if (!hasBalance) {
-        setErrorMessage('Your Solana wallet must have a uOS balance greater than 0 to register.');
+        setErrorMessage('You need to have a uOS balance to register for the airdrop.');
         setRegistrationStatus('error');
         return;
       }
-      
-      // Phase 1: Registration - Store in registered_users table exactly as specified in the build document
+
+      // Insert data into Supabase
       const { data, error } = await supabase
-        .from('registered_users')
-        .insert({
-          solana_address: solanaWallet,
-          evm_address: evmWallet
-        });
+        .from('registered_wallets')
+        .insert([
+          { 
+            solana_wallet: solanaWallet, 
+            evm_wallet: evmWallet 
+          }
+        ])
+        .select();
 
       if (error) {
-        if (error.code === '23505') {  // Unique violation
-          setErrorMessage('This Solana wallet address is already registered.');
-          setRegistrationStatus('error');
+        console.error('Error registering wallets:', error);
+        
+        // If there's a duplicate entry, we don't want to show an error
+        if (error.code === '23505') {
+          setRegistrationStatus('success');
           return;
         }
         
-        console.error('Error inserting record:', error);
-        throw error;
+        setErrorMessage(`Registration failed: ${error.message}`);
+        setRegistrationStatus('error');
+        return;
       }
-      
+
+      console.log('Registration successful:', data);
       setRegistrationStatus('success');
     } catch (error) {
-      console.error('Error registering user:', error);
+      console.error('Error in registration process:', error);
+      setErrorMessage(`An unexpected error occurred during registration. Please try again later.`);
       setRegistrationStatus('error');
-      setErrorMessage('Failed to register. Please try again later.');
     }
-  };
-
-  // Function to handle merkle animation
-  const handleMerkleAnimation = () => {
-    setShowMerkleAnimation(true);
-  };
-
-  // Function to handle animation completion
-  const handleAnimationComplete = () => {
-    setShowMerkleAnimation(false);
   };
 
   // Toggle manual mode
@@ -305,17 +248,6 @@ export default function Home() {
     // Reset error messages when switching modes
     setErrorMessage(null);
   };
-
-  if (!ready) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-primary to-accent mb-4"></div>
-          <div className="text-gray-500">Loading...</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16 pb-12 px-4">

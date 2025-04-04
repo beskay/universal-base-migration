@@ -11,52 +11,77 @@ interface PrivyProviderProps {
 
 export default function PrivyProvider({ children }: PrivyProviderProps) {
   const [mounted, setMounted] = useState(false);
+  const [privyInitialized, setPrivyInitialized] = useState(false);
 
   useEffect(() => {
     setMounted(true);
 
+    // Safely log provider info
     if (isBrowser) {
-      setTimeout(() => {
-        logProviderInfo();
-      }, 1000);
+      try {
+        setTimeout(() => {
+          logProviderInfo();
+        }, 1000);
+      } catch (error) {
+        console.error("Error logging provider info:", error);
+      }
+    }
+
+    // Check if Privy App ID is available
+    if (process.env.NEXT_PUBLIC_PRIVY_APP_ID) {
+      setPrivyInitialized(true);
+    } else {
+      console.warn("Privy App ID not found. Authentication features will be limited.");
     }
   }, []);
 
+  // If not mounted, render children without Privy
   if (!mounted) {
     return <>{children}</>;
   }
 
-  const { chains, publicClient } = configureChains(
-    [base],
-    [publicProvider()]
-  );
+  // If Privy is not initialized, render children without Privy
+  if (!privyInitialized) {
+    return <>{children}</>;
+  }
 
-  const config = createConfig({
-    autoConnect: false,
-    publicClient,
-  });
+  // Configure wagmi
+  try {
+    const { chains, publicClient } = configureChains(
+      [base],
+      [publicProvider()]
+    );
 
-  return (
-    <PrivyAuthProvider
-      appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID || ''}
-      config={{
-        loginMethods: ['wallet'],
-        appearance: {
-          theme: 'light',
-          accentColor: '#3b82f6', // primary color
-          logo: '/new-logo.jpeg'
-        },
-        embeddedWallets: {
-          createOnLogin: 'all-users',
-          noPromptOnSignature: true,
-        },
-        supportedChains: [base],
-        walletConnectCloudProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
-      }}
-    >
-      <WagmiConfig config={config}>
-        {children}
-      </WagmiConfig>
-    </PrivyAuthProvider>
-  );
+    const config = createConfig({
+      autoConnect: false,
+      publicClient,
+    });
+
+    return (
+      <PrivyAuthProvider
+        appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID || ''}
+        config={{
+          loginMethods: ['wallet'],
+          appearance: {
+            theme: 'light',
+            accentColor: '#3b82f6', // primary color
+            logo: '/new-logo.jpeg'
+          },
+          embeddedWallets: {
+            createOnLogin: 'all-users',
+            noPromptOnSignature: true,
+          },
+          supportedChains: [base],
+          walletConnectCloudProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+        }}
+      >
+        <WagmiConfig config={config}>
+          {children}
+        </WagmiConfig>
+      </PrivyAuthProvider>
+    );
+  } catch (error) {
+    console.error("Error setting up Privy/Wagmi:", error);
+    return <>{children}</>;
+  }
 }

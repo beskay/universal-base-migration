@@ -5,8 +5,8 @@ import { AnimatedShinyText } from './AnimatedShinyText';
 export default function Navigation() {
   const router = useRouter();
   
-  // Disable Register link, keep Claim link enabled
-  const registerEnabled = false;
+  // Enable both links
+  const registerEnabled = true;
   const claimEnabled = true;
   
   return (
@@ -33,28 +33,55 @@ export default function Navigation() {
           </div>
           
           <div className="flex space-x-2">
-            {/* Register link - disabled */}
-            <div 
-              className="px-4 py-2 rounded-lg font-mono text-xs md:text-sm text-gray-400 bg-gray-100 cursor-not-allowed"
-              style={{ opacity: 0.6 }}
-            >
-              <span className="text-current">
-                Register
-              </span>
-            </div>
-            <Link 
-              href="/claim" 
-              className={`px-4 py-2 rounded-lg transition font-mono text-xs md:text-sm ${
-                router.pathname === '/claim' 
-                  ? 'bg-gradient-to-r from-gray-800 to-gray-900 text-white' 
-                  : 'text-gray-800 hover:bg-gray-100'
-              }`}
-              style={{ opacity: 1, pointerEvents: 'auto', cursor: 'pointer' }}
-            >
-              <AnimatedShinyText className={router.pathname === '/claim' ? 'text-white' : 'text-current'}>
-                Claim
-              </AnimatedShinyText>
-            </Link>
+            {/* Register link */}
+            {registerEnabled ? (
+              <Link 
+                href="/" 
+                className={`px-4 py-2 rounded-lg transition font-mono text-xs md:text-sm ${
+                  router.pathname === '/' 
+                    ? 'bg-gradient-to-r from-gray-800 to-gray-900 text-white' 
+                    : 'text-gray-800 hover:bg-gray-100'
+                }`}
+              >
+                <AnimatedShinyText className={router.pathname === '/' ? 'text-white' : 'text-current'}>
+                  Register
+                </AnimatedShinyText>
+              </Link>
+            ) : (
+              <div 
+                className="px-4 py-2 rounded-lg font-mono text-xs md:text-sm text-gray-400 bg-gray-100 cursor-not-allowed"
+                style={{ opacity: 0.6 }}
+              >
+                <span className="text-current">
+                  Register
+                </span>
+              </div>
+            )}
+            
+            {/* Claim link */}
+            {claimEnabled ? (
+              <Link 
+                href="/claim" 
+                className={`px-4 py-2 rounded-lg transition font-mono text-xs md:text-sm ${
+                  router.pathname === '/claim' 
+                    ? 'bg-gradient-to-r from-gray-800 to-gray-900 text-white' 
+                    : 'text-gray-800 hover:bg-gray-100'
+                }`}
+              >
+                <AnimatedShinyText className={router.pathname === '/claim' ? 'text-white' : 'text-current'}>
+                  Claim
+                </AnimatedShinyText>
+              </Link>
+            ) : (
+              <div 
+                className="px-4 py-2 rounded-lg font-mono text-xs md:text-sm text-gray-400 bg-gray-100 cursor-not-allowed"
+                style={{ opacity: 0.6 }}
+              >
+                <span className="text-current">
+                  Claim
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </nav>
