@@ -4,6 +4,7 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
+        <meta httpEquiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';" />
         <script dangerouslySetInnerHTML={{
           __html: `            (function() {
               try {
@@ -38,4 +39,4 @@ export default function Document() {
       </body>
     </Html>
   );
-} 
+}
