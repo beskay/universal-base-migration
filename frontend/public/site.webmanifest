@@ -1,6 +1,6 @@
 {
-  "name": "UOS WETH Airdrop",
-  "short_name": "UOS WETH",
+  "name": "Solana to Base Migration",
+  "short_name": "Token Migration",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",

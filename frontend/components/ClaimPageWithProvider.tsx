@@ -453,7 +453,6 @@ const ClaimPageWithProvider = () => {
           <Head>
             <title>Solana to Base Migration</title>
             <meta name="description" content="Verify your eligibility and migrate your tokens from Solana to Base" />
-            <link rel="icon" href="/favicon.ico" />
           </Head>
 
           <Navigation />

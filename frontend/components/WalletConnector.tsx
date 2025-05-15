@@ -19,6 +19,15 @@ function ClientOnly({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// Helper function for better address formatting
+const formatDisplayAddress = (address: string | undefined | null): string => {
+  if (!address) return '';
+  if (address.length <= 16) return address;
+  
+  // For longer addresses, show first 8 and last 8 characters
+  return `${address.substring(0, 8)}...${address.substring(address.length - 8)}`;
+};
+
 // Main component without wagmi hooks
 function WalletConnectorInner() {
   const [solanaAddress, setSolanaAddress] = useState<string | null>(null);
@@ -146,13 +155,6 @@ function WalletConnectorInner() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <h2 className="mb-4 text-gray-700">Wallet Connection</h2>
-          <div className="flex items-center mb-4">
-            <span className="text-sm text-gray-500 mr-2">Manual</span>
-            <label className="switch">
-              <input type="checkbox" disabled />
-              <span className="slider round"></span>
-            </label>
-          </div>
         </div>
         
         <div className="space-y-4">
@@ -164,10 +166,10 @@ function WalletConnectorInner() {
               {(showRainbowKit || isEvmConnected) && <ConnectButton />}
             </div>
             {isEvmConnected && evmAddress && (
-              <div className="flex items-center mt-2">
-                <div className="w-2 h-2 rounded-full mr-2 bg-green-500 shadow-sm" />
-                <p className="text-gray-600 truncate max-w-[240px]">
-                  {evmAddress}
+              <div className="flex items-center mt-2 w-full">
+                <div className="w-2 h-2 rounded-full mr-2 flex-shrink-0 bg-green-500 shadow-sm" />
+                <p className="text-gray-600 font-mono text-sm">
+                  {formatDisplayAddress(evmAddress)}
                 </p>
               </div>
             )}
@@ -187,12 +189,12 @@ function WalletConnectorInner() {
                 </button>
               )}
             </div>
-            <div className="flex items-center">
-              <div className={`w-2 h-2 rounded-full mr-2 ${
+            <div className="flex items-center w-full">
+              <div className={`w-2 h-2 rounded-full mr-2 flex-shrink-0 ${
                 solanaAddress ? 'bg-green-500' : 'bg-red-500'
               }`} />
-              <p className="text-gray-600">
-                {solanaAddress || (!isEvmConnected ? 'Connect Base wallet first' : 'Not connected')}
+              <p className="text-gray-600 font-mono text-sm">
+                {solanaAddress ? formatDisplayAddress(solanaAddress) : (!isEvmConnected ? 'Connect Base wallet first' : 'Not connected')}
               </p>
             </div>
 

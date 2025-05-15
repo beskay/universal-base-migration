@@ -54,7 +54,7 @@ function ClientSideProvider({ children }: { children: ReactNode }) {
         groupName: 'Popular',
         wallets: [
           metaMaskWallet({ projectId, chains }),
-          coinbaseWallet({ appName: 'UOS/WETH Airdrop', chains }),
+          coinbaseWallet({ appName: 'Solana to Base Migration', chains }),
           walletConnectWallet({ projectId, chains }),
           trustWallet({ projectId, chains }),
           rainbowWallet({ projectId, chains }),
