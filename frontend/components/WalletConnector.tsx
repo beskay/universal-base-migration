@@ -45,6 +45,49 @@ function WalletConnectorInner() {
     }
   }, [isEvmConnected]);
 
+  // Check if the wallet addresses are already registered
+  const checkIfAlreadyRegistered = async (solAddress: string, evmAddr: string) => {
+    // Check if solana address already exists
+    const { data: solData, error: solError } = await supabase
+      .from('registered_users')
+      .select('id')
+      .eq('solana_address', solAddress)
+      .limit(1);
+    
+    if (solError) {
+      console.error('Error checking Solana address:', solError);
+      return { isRegistered: false, error: solError.message };
+    }
+    
+    if (solData && solData.length > 0) {
+      return { 
+        isRegistered: true, 
+        error: 'This Solana wallet address has already been registered for migration. Each Solana address can only be registered once.' 
+      };
+    }
+    
+    // Check if evm address already exists
+    const { data: evmData, error: evmError } = await supabase
+      .from('registered_users')
+      .select('id')
+      .eq('evm_address', evmAddr)
+      .limit(1);
+    
+    if (evmError) {
+      console.error('Error checking EVM address:', evmError);
+      return { isRegistered: false, error: evmError.message };
+    }
+    
+    if (evmData && evmData.length > 0) {
+      return { 
+        isRegistered: true, 
+        error: 'This Base wallet address has already been registered for migration. Each Base address can only be registered once.' 
+      };
+    }
+    
+    return { isRegistered: false, error: null };
+  };
+
   // Handle Phantom wallet connection
   const connectPhantom = async () => {
     try {
@@ -109,6 +152,15 @@ function WalletConnectorInner() {
     setRegistrationStatus('loading');
     
     try {
+      // Check if either address is already registered
+      const { isRegistered, error: checkError } = await checkIfAlreadyRegistered(solanaAddress, evmAddress);
+      
+      if (isRegistered) {
+        setErrorMessage(checkError);
+        setRegistrationStatus('error');
+        return;
+      }
+      
       const { error } = await supabase.from('registered_users').insert({
         solana_address: solanaAddress,
         evm_address: evmAddress
@@ -116,7 +168,18 @@ function WalletConnectorInner() {
 
       if (error) {
         console.error('Error saving wallet addresses:', error);
-        setErrorMessage(error.message);
+        // Check for duplicate key error as a fallback
+        if (error.message.includes('duplicate key value') && error.message.includes('registered_users_solana_address_key')) {
+          setErrorMessage(
+            'This Solana wallet address has already been registered for migration. Each Solana address can only be registered once.'
+          );
+        } else if (error.message.includes('duplicate key value') && error.message.includes('registered_users_evm_address_key')) {
+          setErrorMessage(
+            'This Base wallet address has already been registered for migration. Each Base address can only be registered once.'
+          );
+        } else {
+          setErrorMessage(error.message);
+        }
         setRegistrationStatus('error');
       } else {
         setRegistrationStatus('success');
@@ -214,23 +277,67 @@ function WalletConnectorInner() {
       </div>
 
       {errorMessage && (
-        <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg mb-6">
-          {errorMessage}
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg mb-6">
+          <div className="flex items-start">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Registration Error</h3>
+              <div className="mt-1 text-sm text-red-700">
+                {errorMessage}
+              </div>
+              {errorMessage.includes('already been registered') && (
+                <div className="mt-2 text-sm">
+                  <a href="/claim" className="font-medium text-red-800 underline hover:text-red-600">
+                    Go to claim page
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
-      {solanaAddress && evmAddress && (
+      {registrationStatus === 'success' && (
+        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg mb-6">
+          <div className="flex items-start">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-green-800">Registration Successful</h3>
+              <div className="mt-1 text-sm text-green-700">
+                Your wallets have been successfully registered for the Solana to Base migration. 
+                You can now proceed to the claim page when the migration is ready.
+              </div>
+              <div className="mt-2 text-sm">
+                <a href="/claim" className="font-medium text-green-800 underline hover:text-green-600">
+                  Go to claim page
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {solanaAddress && evmAddress && registrationStatus !== 'success' && (
         <button
           onClick={saveWalletAddresses}
-          disabled={registrationStatus === 'loading' || registrationStatus === 'success'}
+          disabled={registrationStatus === 'loading'}
           className={`py-3 px-4 w-full rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600 transition-colors ${
             registrationStatus === 'loading' ? 'opacity-60 cursor-not-allowed' : ''
           }`}
         >
           {registrationStatus === 'loading' ? (
-            <LoadingSpinner size="sm" className="mr-2" />
-          ) : null}
-          {registrationStatus === 'success' ? 'Registration Complete' : 'Register for Migration'}
+            <><LoadingSpinner size="sm" className="mr-2" /> Registering...</>
+          ) : (
+            'Register for Migration'
+          )}
         </button>
       )}
     </div>

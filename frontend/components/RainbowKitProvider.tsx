@@ -14,7 +14,8 @@ import {
   trustWallet,
   rainbowWallet,
   braveWallet,
-  ledgerWallet
+  ledgerWallet,
+  phantomWallet
 } from '@rainbow-me/rainbowkit/wallets';
 import '@rainbow-me/rainbowkit/styles.css';
 
@@ -53,6 +54,7 @@ function ClientSideProvider({ children }: { children: ReactNode }) {
       {
         groupName: 'Popular',
         wallets: [
+          phantomWallet({ chains }),  // Phantom wallet doesn't need projectId
           metaMaskWallet({ projectId, chains }),
           coinbaseWallet({ appName: 'Solana to Base Migration', chains }),
           walletConnectWallet({ projectId, chains }),
