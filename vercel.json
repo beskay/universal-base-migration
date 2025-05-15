@@ -10,6 +10,5 @@
   },
   "buildCommand": "cd frontend && pnpm install && pnpm run build",
   "installCommand": "cd frontend && pnpm install",
-  "outputDirectory": "frontend/.next",
-  "framework": null
+  "outputDirectory": "frontend"
 } 
