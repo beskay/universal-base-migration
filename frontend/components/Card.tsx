@@ -29,7 +29,7 @@ export default function Card({
         rounded-xl border p-6 md:p-8 lg:p-10
         ${variantStyles[variant]} 
         ${hover ? 'transition-shadow hover:shadow-card-hover' : 'shadow-card'} 
-        ${emeraldShadow ? 'shadow-lg md:shadow-xl shadow-emerald-500/20 backdrop-blur-sm' : ''}
+        ${emeraldShadow ? 'shadow-xl border-blue-200/50 bg-white/95 backdrop-blur-[1px]' : ''}
         ${className}
       `}
     >

@@ -46,6 +46,7 @@ module.exports = {
       },
       boxShadow: {
         'window': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'xl': '0 0 15px 5px rgba(59, 130, 246, 0.15), 0 0 50px 15px rgba(59, 130, 246, 0.1), 0 0 200px 50px rgba(59, 130, 246, 0.05)',
       },
       borderWidth: {
         DEFAULT: '1px',

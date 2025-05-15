@@ -212,7 +212,7 @@ function WalletConnectorInner() {
   );
 
   return (
-    <div className="window max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
+    <div className="window max-w-md mx-auto p-6 bg-white shadow-xl border-blue-200/50 bg-white/95 backdrop-blur-[1px] rounded-xl">
       <h1 className="mb-4 text-center text-gray-800">Connect Your Wallets</h1>
       
       <div className="mb-6">
