@@ -26,7 +26,8 @@ import {
   trustWallet,
   rainbowWallet,
   braveWallet,
-  ledgerWallet
+  ledgerWallet,
+  phantomWallet
 } from '@rainbow-me/rainbowkit/wallets';
 import '@rainbow-me/rainbowkit/styles.css';
 
@@ -55,6 +56,7 @@ const connectors = connectorsForWallets([
   {
     groupName: 'Popular',
     wallets: [
+      phantomWallet({ chains }),  // Add Phantom wallet to the top of the list
       metaMaskWallet({ projectId, chains }),
       coinbaseWallet({ appName: 'Solana to Base Migration', chains }),
       walletConnectWallet({ projectId, chains }),
