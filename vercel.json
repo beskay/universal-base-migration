@@ -10,5 +10,6 @@
   },
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/.next",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "rootDirectory": "frontend"
 } 
