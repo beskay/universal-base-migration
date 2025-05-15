@@ -1,22 +1,77 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Navigation from './Navigation';
 import Button from './Button';
 import Card from './Card';
-import { formatAddress } from '../lib/walletUtils';
-import { formatEther, parseEther } from 'viem';
-import { useAccount, useDisconnect } from 'wagmi';
+import supabase, { getMerkleProof } from '../lib/supabase';
+import { useAccount, useDisconnect, useContractWrite, usePrepareContractWrite, UsePrepareContractWriteConfig, useContractRead } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { MetaMaskConnector } from 'wagmi/connectors/metaMask';
-import { CoinbaseWalletConnector } from 'wagmi/connectors/coinbaseWallet';
-import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
-import { AIRCADE_ABI, AIRCADE_CONTRACT_ADDRESS } from '../lib/contracts/AIRcade';
-import { useVerifyProof } from '../hooks/useVerifyProof';
+import { configureChains, createConfig, WagmiConfig } from 'wagmi';
+import { base } from '@wagmi/chains';
+import { publicProvider } from 'wagmi/providers/public';
+import { alchemyProvider } from 'wagmi/providers/alchemy';
+import { infuraProvider } from 'wagmi/providers/infura';
+import { parseEther, formatEther } from 'viem';
+import { TOKEN_ABI, TOKEN_CONTRACT_ADDRESS } from '../lib/contracts/UOS';
+import { 
+  RainbowKitProvider, 
+  connectorsForWallets,
+  lightTheme
+} from '@rainbow-me/rainbowkit';
+import {
+  metaMaskWallet,
+  coinbaseWallet,
+  walletConnectWallet,
+  trustWallet,
+  rainbowWallet,
+  braveWallet,
+  ledgerWallet
+} from '@rainbow-me/rainbowkit/wallets';
+import '@rainbow-me/rainbowkit/styles.css';
+
+// Helper function for formatting addresses
+const formatAddress = (address: string | undefined): string => {
+  if (!address) return '';
+  return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+};
 
 // This is a placeholder - replace with your actual project ID from WalletConnect Cloud
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
-if (!projectId) throw new Error('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is required');
+if (!projectId) console.warn('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is missing');
+
+// Configure chains & providers with multiple fallback providers
+const { chains, publicClient } = configureChains(
+  [base], // Only using Base network
+  [
+    // Use multiple providers for better reliability
+    infuraProvider({ apiKey: process.env.NEXT_PUBLIC_INFURA_ID as string }), // Infura API key
+    publicProvider()
+  ]
+);
+
+// Set up custom wallet list
+const connectors = connectorsForWallets([
+  {
+    groupName: 'Popular',
+    wallets: [
+      metaMaskWallet({ projectId, chains }),
+      coinbaseWallet({ appName: 'Solana to Base Migration', chains }),
+      walletConnectWallet({ projectId, chains }),
+      trustWallet({ projectId, chains }),
+      rainbowWallet({ projectId, chains }),
+      braveWallet({ chains }),
+      ledgerWallet({ projectId, chains })
+    ],
+  }
+]);
+
+// Set up wagmi config
+const config = createConfig({
+  autoConnect: false, // Changed to false to prevent auto-connecting on page load
+  publicClient,
+  connectors
+});
 
 // The actual claim form component
 const ClaimForm = () => {
@@ -24,7 +79,7 @@ const ClaimForm = () => {
   const { disconnect } = useDisconnect();
   
   // Add logging to verify contract address
-  console.log('Using contract address:', AIRCADE_CONTRACT_ADDRESS);
+  console.log('Using contract address:', TOKEN_CONTRACT_ADDRESS);
   
   const [claimStatus, setClaimStatus] = useState<'idle' | 'checking' | 'eligible' | 'ineligible' | 'claiming' | 'claimed' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -33,8 +88,8 @@ const ClaimForm = () => {
 
   // Check if address has already claimed
   const { data: hasClaimed } = useContractRead({
-    address: AIRCADE_CONTRACT_ADDRESS,
-    abi: AIRCADE_ABI,
+    address: TOKEN_CONTRACT_ADDRESS,
+    abi: TOKEN_ABI,
     functionName: 'claimed',
     args: evmWallet ? [evmWallet] : undefined,
     enabled: Boolean(evmWallet),
@@ -42,8 +97,8 @@ const ClaimForm = () => {
 
   // Prepare the contract write configuration
   const { config: contractConfig } = usePrepareContractWrite({
-    address: AIRCADE_CONTRACT_ADDRESS,
-    abi: AIRCADE_ABI,
+    address: TOKEN_CONTRACT_ADDRESS,
+    abi: TOKEN_ABI,
     functionName: 'claim',
     args: evmWallet && airdropAmount && merkleProof ? [
       evmWallet,
@@ -198,7 +253,7 @@ const ClaimForm = () => {
     <Card hover className="text-center">
       <h2 className="text-2xl font-bold mb-8">Get Started</h2>
       <p className="text-gray-600 mb-10 text-lg">
-        Enter your Ethereum wallet address to check eligibility and claim your tokens.
+        Enter your Base wallet address to check eligibility and migrate your tokens.
       </p>
       <div className="flex justify-center py-4">
         <ConnectButton />
@@ -206,12 +261,12 @@ const ClaimForm = () => {
     </Card>
   ) : (
     <Card>
-      <h2 className="text-2xl font-bold mb-8">Claim Your Tokens</h2>
+      <h2 className="text-2xl font-bold mb-8">Migrate Your Tokens</h2>
       
       <div className="mb-10">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between p-5 md:p-6 bg-gray-50 rounded-lg border border-gray-200">
           <div className="mb-4 md:mb-0">
-            <div className="font-medium text-lg">EVM Wallet</div>
+            <div className="font-medium text-lg">Base Wallet</div>
             <div className="text-sm text-gray-500 font-mono mt-2">
               {formatAddress(evmWallet)}
             </div>
@@ -230,7 +285,7 @@ const ClaimForm = () => {
 
       {claimStatus === 'idle' && hasClaimed && (
         <div className="p-5 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg mb-10 text-center">
-          <p className="text-lg font-medium">Nice try, you have claimed, no double dipping here! 😉</p>
+          <p className="text-lg font-medium">This wallet has already completed the migration.</p>
         </div>
       )}
 
@@ -267,7 +322,7 @@ const ClaimForm = () => {
           </div>
           <h3 className="text-xl font-bold text-yellow-800">Not Eligible</h3>
           <p className="text-yellow-700 mt-2">
-            Your wallet is not eligible for the AIRcade token claim.
+            Your wallet is not eligible for the token migration.
             This could be because you didn't register in time or your eligibility couldn't be verified.
           </p>
           <div className="mt-6">
@@ -288,9 +343,9 @@ const ClaimForm = () => {
                 </svg>
               </div>
             </div>
-            <h3 className="text-xl font-bold text-green-800">Eligible for Claim!</h3>
+            <h3 className="text-xl font-bold text-green-800">Eligible for Migration!</h3>
             <p className="text-green-700 mt-2">
-              You are eligible to claim <span className="font-bold">{airdropAmount ? formatEther(BigInt(airdropAmount)) : '0'}</span> AIRcade tokens.
+              You are eligible to migrate <span className="font-bold">{airdropAmount ? formatEther(BigInt(airdropAmount)) : '0'}</span> tokens.
             </p>
           </Card>
           
@@ -301,7 +356,7 @@ const ClaimForm = () => {
             size="lg"
             className="font-mono text-white text-sm md:text-base bg-gray-800 hover:bg-gray-700"
           >
-            Claim Tokens
+            Migrate Tokens
           </Button>
         </div>
       )}
@@ -316,7 +371,7 @@ const ClaimForm = () => {
               </svg>
             </div>
           </div>
-          <h3 className="text-xl font-bold text-blue-800">Claiming Tokens...</h3>
+          <h3 className="text-xl font-bold text-blue-800">Processing Migration...</h3>
           <p className="text-blue-700 mt-2">
             Please wait while your transaction is being processed.
           </p>
@@ -332,9 +387,9 @@ const ClaimForm = () => {
               </svg>
             </div>
           </div>
-          <h3 className="text-xl font-bold text-green-800">Tokens Claimed!</h3>
+          <h3 className="text-xl font-bold text-green-800">Migration Complete!</h3>
           <p className="text-green-700 mt-2">
-            You have successfully claimed your AIRcade tokens.
+            You have successfully migrated your tokens.
             The tokens should appear in your wallet shortly.
           </p>
         </Card>
@@ -383,35 +438,45 @@ const ClaimPageWithProvider = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Head>
-        <title>Claim AIRcade Tokens</title>
-        <meta name="description" content="Verify your eligibility and claim your AIRcade tokens" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+    <WagmiConfig config={config}>
+      <RainbowKitProvider 
+        chains={chains} 
+        theme={lightTheme({
+          accentColor: '#3b82f6',
+          accentColorForeground: 'white',
+          borderRadius: 'medium',
+          fontStack: 'system'
+        })}
+        modalSize="compact"
+      >
+        <div className="min-h-screen bg-white flex flex-col justify-center">
+          <Head>
+            <title>Solana to Base Migration</title>
+            <meta name="description" content="Verify your eligibility and migrate your tokens from Solana to Base" />
+            <link rel="icon" href="/favicon.ico" />
+          </Head>
 
-      <Navigation />
+          <Navigation />
 
-      <main className="max-w-5xl mx-auto mt-8 md:-mt-32">
-        <div className="text-center mb-8 md:mb-12 animate-fadeIn">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Claim AIRcade Tokens</h1>
-          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
-            Verify your eligibility and claim your AIRcade tokens based on the merkle proof.
-          </p>
+          <main className="flex-grow flex flex-col justify-center items-center py-16">
+            <div className="text-center mb-8 animate-fadeIn">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Solana to Base Migration</h1>
+              <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto px-4">
+                Verify your eligibility and migrate your tokens from Solana to Base.
+              </p>
+            </div>
+
+            <div className="w-full max-w-md mx-auto animate-slideIn px-4">
+              <ClaimForm />
+            </div>
+          </main>
+
+          <footer className="mt-auto text-center pb-8">
+            {/* Logo and links removed */}
+          </footer>
         </div>
-
-        <div className="max-w-2xl mx-auto animate-slideIn px-4">
-          <ClaimForm />
-        </div>
-      </main>
-
-      <footer className="mt-12 text-center pb-8">
-        <p className="text-xl font-bold text-gray-900">AIRcade</p>
-        <p className="mt-2 text-gray-800 font-mono text-xs md:text-sm tracking-[0.15em]">
-          - Designed by <a href="https://x.com/__U_O_S__" target="_blank" rel="noopener noreferrer" className="hover:text-blue-500 transition-colors duration-200">🐬</a> -
-        </p>
-      </footer>
-    </div>
+      </RainbowKitProvider>
+    </WagmiConfig>
   );
 };
 

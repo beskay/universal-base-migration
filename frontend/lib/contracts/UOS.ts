@@ -1,4 +1,4 @@
-export const AIRCADE_ABI = [
+export const TOKEN_ABI = [
   {
     "inputs": [],
     "stateMutability": "nonpayable",
@@ -497,4 +497,4 @@ export const AIRCADE_ABI = [
   }
 ] as const;
 
-export const AIRCADE_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_AIRCADE_TOKEN_ADDRESS as `0x${string}`; 
+export const TOKEN_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_TOKEN_CONTRACT_ADDRESS as `0x${string}`; 

@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { configureChains, createConfig, WagmiConfig } from 'wagmi';
 import { base } from '@wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
@@ -22,9 +22,13 @@ interface RainbowKitProviderProps {
   children: ReactNode;
 }
 
-// This is a placeholder - replace with your actual project ID from WalletConnect Cloud
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
-if (!projectId) throw new Error('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is required');
+// Make sure projectId is only accessed on the client side
+const getProjectId = () => {
+  if (typeof window !== 'undefined') {
+    return process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
+  }
+  return '';
+};
 
 // Configure chains & providers
 const { chains, publicClient } = configureChains(
@@ -32,39 +36,47 @@ const { chains, publicClient } = configureChains(
   [publicProvider()]
 );
 
-// Set up custom wallet list
-const connectors = connectorsForWallets([
-  {
-    groupName: 'Popular',
-    wallets: [
-      metaMaskWallet({ projectId, chains }),
-      coinbaseWallet({ appName: 'UOS/WETH Airdrop', chains }),
-      walletConnectWallet({ projectId, chains }),
-      trustWallet({ projectId, chains }),
-      rainbowWallet({ projectId, chains }),
-      braveWallet({ chains }),
-      ledgerWallet({ projectId, chains })
-    ],
-  }
-]);
-
-// Set up wagmi config
-const config = createConfig({
-  autoConnect: true,
-  publicClient,
-  connectors
-});
-
-export default function RainbowKitProvider({ children }: RainbowKitProviderProps) {
+// Create a client-side only provider wrapper
+function ClientSideProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
+  const [config, setConfig] = useState<any>(null);
   
-  // This is to prevent hydration errors
   useEffect(() => {
+    // Get project ID
+    const projectId = getProjectId();
+    if (!projectId) {
+      console.warn('NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is missing');
+    }
+
+    // Set up custom wallet list
+    const connectors = connectorsForWallets([
+      {
+        groupName: 'Popular',
+        wallets: [
+          metaMaskWallet({ projectId, chains }),
+          coinbaseWallet({ appName: 'UOS/WETH Airdrop', chains }),
+          walletConnectWallet({ projectId, chains }),
+          trustWallet({ projectId, chains }),
+          rainbowWallet({ projectId, chains }),
+          braveWallet({ chains }),
+          ledgerWallet({ projectId, chains })
+        ],
+      }
+    ]);
+
+    // Set up wagmi config
+    const wagmiConfig = createConfig({
+      autoConnect: true,
+      publicClient,
+      connectors
+    });
+
+    setConfig(wagmiConfig);
     setMounted(true);
   }, []);
 
-  // This prevents hydration errors
-  if (!mounted) {
+  // This prevents SSR issues
+  if (!mounted || !config) {
     return <>{children}</>;
   }
 
@@ -84,4 +96,8 @@ export default function RainbowKitProvider({ children }: RainbowKitProviderProps
       </RKProvider>
     </WagmiConfig>
   );
+}
+
+export default function RainbowKitProvider({ children }: RainbowKitProviderProps) {
+  return <ClientSideProvider>{children}</ClientSideProvider>;
 } 

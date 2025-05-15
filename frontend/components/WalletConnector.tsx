@@ -1,27 +1,33 @@
-import { usePrivy, type WalletWithMetadata } from '@privy-io/react-auth';
-import { useEffect, useState } from 'react';
-import supabase from '../lib/supabase';
-import LoadingSpinner from './LoadingSpinner';
-import { blockPhantomEVM, isPhantomEVM } from '../lib/walletUtils';
+import React, { useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
-import WarningModal from './WarningModal';
+import supabase from '../lib/supabase';
+import LoadingSpinner from './LoadingSpinner';
 
-export default function WalletConnector() {
-  const { login, authenticated, user, ready } = usePrivy();
+// ClientOnly wrapper component to prevent SSR errors with wagmi hooks
+function ClientOnly({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  return <>{children}</>;
+}
+
+// Main component without wagmi hooks
+function WalletConnectorInner() {
   const [solanaAddress, setSolanaAddress] = useState<string | null>(null);
   const [registrationStatus, setRegistrationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [showWarningModal, setShowWarningModal] = useState(false);
   const [showRainbowKit, setShowRainbowKit] = useState(false);
   
-  // Get account from wagmi for Rainbow wallet
+  // Get account from wagmi for Rainbow wallet - this is now safely wrapped in ClientOnly
   const { address: evmAddress, isConnected: isEvmConnected } = useAccount();
-
-  // Block Phantom EVM on component mount
-  useEffect(() => {
-    blockPhantomEVM();
-  }, []);
 
   // Reset RainbowKit visibility when connection status changes
   useEffect(() => {
@@ -30,47 +36,64 @@ export default function WalletConnector() {
     }
   }, [isEvmConnected]);
 
-  useEffect(() => {
-    if (ready && authenticated && user) {
-      // Get connected wallets
-      const wallets = (user.linkedAccounts || []).filter((account): account is WalletWithMetadata => 
-        account.type === 'wallet'
-      );
-      
-      // ONLY find Solana wallet
-      const solanaWallet = wallets.find(wallet => 
-        wallet.walletClientType === 'solana'
-      );
-      
-      if (solanaWallet?.address) {
-        setSolanaAddress(solanaWallet.address);
-      }
-    }
-  }, [ready, authenticated, user]);
-
-  const handleWalletConnection = async (walletType: 'solana') => {
+  // Handle Phantom wallet connection
+  const connectPhantom = async () => {
     try {
-      // Block Phantom EVM before connecting
-      blockPhantomEVM();
+      // Check if Phantom wallet is installed
+      const isPhantomInstalled = window.phantom?.solana?.isPhantom || false;
       
-      // Check if EVM wallet is connected first
+      if (!isPhantomInstalled) {
+        setErrorMessage('Phantom wallet is not installed. Please install it first.');
+        return null;
+      }
+
+      // Connect to Phantom wallet
+      if (window.phantom?.solana) {
+        const { publicKey } = await window.phantom.solana.connect();
+        const phantomAddress = publicKey.toString();
+        setSolanaAddress(phantomAddress);
+        return phantomAddress;
+      } else {
+        setErrorMessage('Phantom wallet is not available.');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error connecting to Phantom wallet:', error);
+      setErrorMessage('Failed to connect to Phantom wallet');
+      return null;
+    }
+  };
+
+  // Connect another Solana wallet (for future extension)
+  const connectOtherSolanaWallet = async () => {
+    // This would implement connection to other Solana wallets
+    setErrorMessage('Only Phantom wallet is supported for Solana currently');
+    return null;
+  };
+
+  // Handle Solana wallet connection
+  const handleSolanaConnection = async () => {
+    try {
+      // Check if Base wallet is connected first
       if (!isEvmConnected) {
-        setErrorMessage('You must connect an EVM wallet before connecting a Solana wallet');
+        setErrorMessage('You must connect a Base wallet before connecting a Solana wallet');
         return;
       }
       
-      // For Solana, allow any Solana wallet using Privy
-      await login();
+      const solAddress = await connectPhantom();
+      if (solAddress) {
+        setSolanaAddress(solAddress);
+      }
     } catch (error) {
-      console.error(`Error connecting ${walletType} wallet:`, error);
-      setErrorMessage(`Failed to connect ${walletType} wallet`);
+      console.error('Error connecting Solana wallet:', error);
+      setErrorMessage('Failed to connect Solana wallet');
     }
   };
 
   // Save wallet addresses to Supabase
   const saveWalletAddresses = async () => {
     if (!solanaAddress || !evmAddress) {
-      setErrorMessage('Both Solana and EVM wallets must be connected');
+      setErrorMessage('Both Solana and Base wallets must be connected');
       return;
     }
 
@@ -97,131 +120,126 @@ export default function WalletConnector() {
     }
   };
 
-  if (!ready) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8">
-        <LoadingSpinner size="lg" className="mb-4" />
-        <p className="text-secondary">Loading...</p>
-      </div>
-    );
-  }
-
   // Custom connect button that shows warning first
   const CustomConnectButton = () => (
     <button
-      onClick={() => setShowWarningModal(true)}
+      onClick={() => {
+        setShowRainbowKit(true);
+        // Directly click the Rainbow connect button
+        setTimeout(() => {
+          const connectButton = document.querySelector('[data-testid="rk-connect-button"]');
+          if (connectButton instanceof HTMLElement) {
+            connectButton.click();
+          }
+        }, 100);
+      }}
       className="btn-secondary text-sm bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 border-blue-200 shadow-sm hover:shadow transition-all duration-300"
     >
-      Connect EVM
+      Connect Base
     </button>
   );
 
   return (
-    <div className="window max-w-md mx-auto p-6">
-      <h1 className="mb-4 text-center">Airdrop Registration</h1>
+    <div className="window max-w-md mx-auto p-6 bg-white shadow-md rounded-lg">
+      <h1 className="mb-4 text-center text-gray-800">Connect Your Wallets</h1>
       
-      <p className="text-base text-secondary mb-8 text-center">
-        Connect your Solana and EVM wallets to register for the airdrop.
-        After registration, you will be eligible to claim your WETH airdrop based on your UOS holdings.
-      </p>
-      
-      {!authenticated && !isEvmConnected ? (
-        <div className="text-center">
-          <button
-            onClick={() => setShowWarningModal(true)}
-            className="btn-primary w-full"
-          >
-            Get Started
-          </button>
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <h2 className="mb-4 text-gray-700">Wallet Connection</h2>
+          <div className="flex items-center mb-4">
+            <span className="text-sm text-gray-500 mr-2">Manual</span>
+            <label className="switch">
+              <input type="checkbox" disabled />
+              <span className="slider round"></span>
+            </label>
+          </div>
         </div>
-      ) : (
-        <div>
-          <div className="mb-6">
-            <h2 className="mb-4">Connect Your Wallets</h2>
-            
-            <div className="space-y-4">
-              {/* RainbowKit Wallet Connection */}
-              <div className="window p-4 shadow-lg shadow-purple-500/10 hover:shadow-purple-500/20 transition-shadow duration-300">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="label">EVM Wallet</p>
-                  {!isEvmConnected && !showRainbowKit && <CustomConnectButton />}
-                  {(showRainbowKit || isEvmConnected) && <ConnectButton />}
-                </div>
-                {isEvmConnected && evmAddress && (
-                  <div className="flex items-center mt-2">
-                    <div className="w-2 h-2 rounded-full mr-2 bg-success shadow-sm shadow-green-500/20" />
-                    <p className="text-value truncate max-w-[240px]">
-                      {evmAddress}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Solana Wallet Section - Using Privy */}
-              <div className={`window p-4 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 transition-shadow duration-300 ${!isEvmConnected ? 'opacity-60' : ''}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="label">Solana Wallet</p>
-                  {!solanaAddress && (
-                    <button
-                      onClick={() => handleWalletConnection('solana')}
-                      disabled={!isEvmConnected}
-                      className={`btn-secondary text-sm bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 border-blue-200 shadow-sm hover:shadow transition-all duration-300 ${!isEvmConnected ? 'cursor-not-allowed opacity-60' : ''}`}
-                    >
-                      {!isEvmConnected ? 'Connect EVM First' : 'Connect Solana'}
-                    </button>
-                  )}
-                </div>
-                <div className="flex items-center">
-                  <div className={`w-2 h-2 rounded-full mr-2 ${
-                    solanaAddress ? 'bg-success shadow-sm shadow-green-500/20' : 'bg-danger shadow-sm shadow-red-500/20'
-                  }`} />
-                  <p className="text-value">
-                    {solanaAddress || (!isEvmConnected ? 'Connect EVM wallet first' : 'Not connected')}
-                  </p>
-                </div>
-              </div>
+        
+        <div className="space-y-4">
+          {/* Base Wallet Connection */}
+          <div className="bg-white p-4 shadow-sm border border-gray-100 rounded-lg hover:shadow transition-shadow duration-300">
+            <div className="flex items-center justify-between mb-2">
+              <p className="label text-gray-700">Base Wallet</p>
+              {!isEvmConnected && !showRainbowKit && <CustomConnectButton />}
+              {(showRainbowKit || isEvmConnected) && <ConnectButton />}
             </div>
+            {isEvmConnected && evmAddress && (
+              <div className="flex items-center mt-2">
+                <div className="w-2 h-2 rounded-full mr-2 bg-green-500 shadow-sm" />
+                <p className="text-gray-600 truncate max-w-[240px]">
+                  {evmAddress}
+                </p>
+              </div>
+            )}
           </div>
 
-          {errorMessage && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg mb-6">
-              {errorMessage}
+          {/* Solana Wallet Section */}
+          <div className={`bg-white p-4 shadow-sm border border-gray-100 rounded-lg hover:shadow transition-shadow duration-300 ${!isEvmConnected ? 'opacity-60' : ''}`}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="label text-gray-700">Solana Wallet</p>
+              {!solanaAddress && (
+                <button
+                  onClick={handleSolanaConnection}
+                  disabled={!isEvmConnected}
+                  className={`btn-secondary text-sm bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 border-blue-200 shadow-sm hover:shadow transition-all duration-300 ${!isEvmConnected ? 'cursor-not-allowed opacity-60' : ''}`}
+                >
+                  {!isEvmConnected ? 'Connect Base First' : 'Connect Phantom'}
+                </button>
+              )}
             </div>
-          )}
+            <div className="flex items-center">
+              <div className={`w-2 h-2 rounded-full mr-2 ${
+                solanaAddress ? 'bg-green-500' : 'bg-red-500'
+              }`} />
+              <p className="text-gray-600">
+                {solanaAddress || (!isEvmConnected ? 'Connect Base wallet first' : 'Not connected')}
+              </p>
+            </div>
 
-          {solanaAddress && evmAddress && (
-            <button
-              onClick={saveWalletAddresses}
-              disabled={registrationStatus === 'loading' || registrationStatus === 'success'}
-              className={`btn-primary w-full ${
-                registrationStatus === 'loading' ? 'opacity-60 cursor-not-allowed' : ''
-              }`}
-            >
-              {registrationStatus === 'loading' ? (
-                <LoadingSpinner size="sm" className="mr-2" />
-              ) : null}
-              {registrationStatus === 'success' ? 'Registration Complete' : 'Complete Registration'}
-            </button>
-          )}
+            {typeof window !== 'undefined' && !window.phantom?.solana?.isPhantom && !solanaAddress && (
+              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-100 rounded-md">
+                <p className="text-sm text-yellow-700">
+                  Phantom wallet not detected. Please install{' '}
+                  <a href="https://phantom.app/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                    Phantom wallet
+                  </a>{' '}
+                  to connect your Solana wallet.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {errorMessage && (
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg mb-6">
+          {errorMessage}
         </div>
       )}
 
-      {/* Warning Modal */}
-      <WarningModal
-        isOpen={showWarningModal}
-        onClose={() => setShowWarningModal(false)}
-        onConfirm={() => {
-          setShowWarningModal(false);
-          setShowRainbowKit(true);
-          // Delay to ensure state update and modal close animation complete
-          setTimeout(() => {
-            const connectButton = document.querySelector('[data-testid="rk-connect-button"]');
-            if (connectButton instanceof HTMLElement) {
-              connectButton.click();
-            }
-          }, 100);
-        }}
-      />
+      {solanaAddress && evmAddress && (
+        <button
+          onClick={saveWalletAddresses}
+          disabled={registrationStatus === 'loading' || registrationStatus === 'success'}
+          className={`py-3 px-4 w-full rounded-lg bg-blue-500 text-white font-medium hover:bg-blue-600 transition-colors ${
+            registrationStatus === 'loading' ? 'opacity-60 cursor-not-allowed' : ''
+          }`}
+        >
+          {registrationStatus === 'loading' ? (
+            <LoadingSpinner size="sm" className="mr-2" />
+          ) : null}
+          {registrationStatus === 'success' ? 'Registration Complete' : 'Register for Migration'}
+        </button>
+      )}
     </div>
+  );
+}
+
+// Export a wrapped version that only runs on the client
+export default function WalletConnector() {
+  return (
+    <ClientOnly>
+      <WalletConnectorInner />
+    </ClientOnly>
   );
 } 

@@ -181,4 +181,65 @@ If you encounter errors connecting your wallets:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+# Solana to Base Migration Tool
+
+This is an open-source tool for migrating tokens from Solana to Base. It can be used by any token project that wants to facilitate this migration process.
+
+## Configuration
+
+### Environment Variables
+
+Set the following environment variables to configure the tool for your token:
+
+```env
+# Token Contract Configuration
+NEXT_PUBLIC_TOKEN_CONTRACT_ADDRESS=0x...  # Your token contract address on Base
+
+# WalletConnect Configuration (for connecting wallets)
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=...  # Get this from https://cloud.walletconnect.com/
+
+# API Providers (optional but recommended for reliability)
+NEXT_PUBLIC_INFURA_ID=...  # Get this from https://infura.io/
+```
+
+### Customizing for Your Token
+
+1. **Token ABI and Address**: Configure your token's ABI and contract address by updating the `TOKEN_ABI` and `TOKEN_CONTRACT_ADDRESS` in `lib/contracts/UOS.ts`. The environment variable `NEXT_PUBLIC_TOKEN_CONTRACT_ADDRESS` should be set to your token's contract address.
+
+2. **Merkle Proof Generation**: Configure your merkle tree and proof generation in the backend database to match your token distribution requirements.
+
+3. **Styling**: Customize the colors, branding, and UI elements to match your token's brand.
+
+## Features
+
+- Connect both Solana and Base wallets
+- Verify eligibility via merkle proofs
+- Migrate tokens from Solana to Base
+- Responsive design
+- Multiple wallet connection options
+
+## Getting Started
+
+1. Clone this repository
+2. Install dependencies with `pnpm install`
+3. Configure your environment variables
+4. Run the development server with `pnpm dev`
+
+## Deployment
+
+Deploy this application to Vercel or any other hosting platform that supports Next.js applications.
+
+```bash
+pnpm build
+pnpm start
+```
+
+## Requirements
+
+- Node.js 16+
+- PNPM (recommended) or NPM
+- A Base network token contract with claim functionality
+- A Solana token 
+- A database for storing migration registrations and merkle proofs 

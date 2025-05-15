@@ -65,7 +65,6 @@ dist/
 downloadeggs/
 .eggs/
 lib/
-!frontend/lib/
 lib64/
 parts/
 sdist/

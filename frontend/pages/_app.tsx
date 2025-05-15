@@ -1,6 +1,4 @@
-// Simple script to block Phantom's EVM functionality
-import { blockPhantomEVM } from '../lib/walletUtils';
-
+import React from 'react';
 import '../styles/globals.css';
 import type { AppProps } from 'next/app';
 import { useRouter } from 'next/router';
@@ -8,15 +6,13 @@ import { useEffect, useState } from 'react';
 import PageLoader from '../components/PageLoader';
 import { Inter } from 'next/font/google';
 import ErrorBoundary from '../components/ErrorBoundary';
+import RainbowKitProvider from '../components/RainbowKitProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
 // Clean up any existing wallet connections
 const cleanupWalletConnections = () => {
   if (typeof window === 'undefined') return;
-  
-  // Block Phantom EVM
-  blockPhantomEVM();
   
   try {
     // Clean up any existing WalletConnect sessions to avoid conflicts
@@ -49,11 +45,6 @@ function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  // Block Phantom EVM on component mount as well
-  useEffect(() => {
-    cleanupWalletConnections();
-  }, []);
-
   // Clean up wallet connections on route change
   useEffect(() => {
     const handleRouteChangeStart = () => {
@@ -78,10 +69,12 @@ function MyApp({ Component, pageProps }: AppProps) {
 
   return (
     <ErrorBoundary>
-      <div className={inter.className}>
-        {loading && <PageLoader />}
-        <Component {...pageProps} />
-      </div>
+      <RainbowKitProvider>
+        <div className={inter.className}>
+          {loading && <PageLoader />}
+          <Component {...pageProps} />
+        </div>
+      </RainbowKitProvider>
     </ErrorBoundary>
   );
 }
