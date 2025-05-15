@@ -5,7 +5,7 @@ import Navigation from './Navigation';
 import Button from './Button';
 import Card from './Card';
 import supabase, { getMerkleProof } from '../lib/supabase';
-import { useAccount, useDisconnect, useContractWrite, usePrepareContractWrite, UsePrepareContractWriteConfig, useContractRead } from 'wagmi';
+import { useAccount, useDisconnect, useContractWrite, usePrepareContractWrite, UsePrepareContractWriteConfig, useContractRead, useNetwork } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { configureChains, createConfig, WagmiConfig } from 'wagmi';
 import { base } from '@wagmi/chains';
@@ -30,6 +30,7 @@ import {
   phantomWallet
 } from '@rainbow-me/rainbowkit/wallets';
 import '@rainbow-me/rainbowkit/styles.css';
+import React from 'react';
 
 // Helper function for formatting addresses
 const formatAddress = (address: string | undefined): string => {
@@ -79,6 +80,7 @@ const config = createConfig({
 const ClaimForm = () => {
   const { address: evmWallet, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
+  const { chain } = useNetwork();
   
   // Add logging to verify contract address
   console.log('Using contract address:', TOKEN_CONTRACT_ADDRESS);
@@ -87,6 +89,7 @@ const ClaimForm = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [airdropAmount, setAirdropAmount] = useState<string | null>(null);
   const [merkleProof, setMerkleProof] = useState<string[] | null>(null);
+  const [openChainModal, setOpenChainModal] = useState<(() => void) | null>(null);
 
   // Check if address has already claimed
   const { data: hasClaimed } = useContractRead({
@@ -252,7 +255,7 @@ const ClaimForm = () => {
   };
 
   return !isConnected ? (
-    <Card hover className="text-center">
+    <Card hover className="text-center" emeraldShadow={true}>
       <h2 className="text-2xl font-bold mb-8">Get Started</h2>
       <p className="text-gray-600 mb-10 text-lg">
         Enter your Base wallet address to check eligibility and migrate your tokens.
@@ -262,22 +265,49 @@ const ClaimForm = () => {
       </div>
     </Card>
   ) : (
-    <Card>
+    <Card emeraldShadow={true}>
       <h2 className="text-2xl font-bold mb-8">Migrate Your Tokens</h2>
       
-      <div className="mb-10">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between p-5 md:p-6 bg-gray-50 rounded-lg border border-gray-200">
-          <div className="mb-4 md:mb-0">
-            <div className="font-medium text-lg">Base Wallet</div>
-            <div className="text-sm text-gray-500 font-mono mt-2">
-              {formatAddress(evmWallet)}
+      <ConnectButton.Custom>
+        {({ chain: connectedChain, openChainModal: openModal }) => {
+          // Store the openChainModal function for use elsewhere
+          React.useEffect(() => {
+            setOpenChainModal(() => openModal);
+          }, [openModal]);
+          
+          return (
+            <div className="mb-8">
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium">Base Wallet</p>
+                  <div className="flex items-center cursor-pointer" onClick={openModal}>
+                    <img 
+                      src={connectedChain?.hasIcon && connectedChain.iconUrl ? connectedChain.iconUrl : ''} 
+                      alt="Chain icon" 
+                      className="w-5 h-5 rounded-full bg-yellow-500 mr-2" 
+                    />
+                    <span className="flex items-center">
+                      {formatAddress(evmWallet)}
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        className="w-4 h-4 ml-1" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center">
-            <ConnectButton />
-          </div>
-        </div>
-      </div>
+          );
+        }}
+      </ConnectButton.Custom>
 
       {errorMessage && (
         <div className="p-5 bg-red-50 border border-red-200 text-red-700 rounded-lg mb-10 text-center">
@@ -296,7 +326,7 @@ const ClaimForm = () => {
           onClick={checkEligibility}
           fullWidth
           size="lg"
-          className="font-mono text-white text-base py-5 bg-gray-800 hover:bg-gray-700 mt-6"
+          className="font-mono text-white text-base py-5 bg-blue-500 hover:bg-blue-600 mt-6 rounded-lg"
         >
           Check Eligibility
         </Button>
@@ -314,7 +344,7 @@ const ClaimForm = () => {
       )}
 
       {claimStatus === 'ineligible' && (
-        <Card variant="warning" className="text-center">
+        <Card variant="warning" className="text-center" emeraldShadow={true}>
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-yellow-600" viewBox="0 0 20 20" fill="currentColor">
@@ -337,7 +367,7 @@ const ClaimForm = () => {
 
       {claimStatus === 'eligible' && (
         <div className="space-y-6">
-          <Card variant="success" className="text-center">
+          <Card variant="success" className="text-center" emeraldShadow={true}>
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" viewBox="0 0 20 20" fill="currentColor">
@@ -364,7 +394,7 @@ const ClaimForm = () => {
       )}
 
       {claimStatus === 'claiming' && (
-        <Card variant="info" className="text-center">
+        <Card variant="info" className="text-center" emeraldShadow={true}>
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
               <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -381,7 +411,7 @@ const ClaimForm = () => {
       )}
 
       {claimStatus === 'claimed' && (
-        <Card variant="success" className="text-center">
+        <Card variant="success" className="text-center" emeraldShadow={true}>
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" viewBox="0 0 20 20" fill="currentColor">
