@@ -8,8 +8,8 @@
     "NEXT_PUBLIC_TOKEN_ADDRESS": "${NEXT_PUBLIC_TOKEN_ADDRESS}",
     "NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID": "${NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID}"
   },
-  "buildCommand": "cd frontend && npm install && npm run build",
+  "buildCommand": "cd frontend && pnpm install && pnpm run build",
+  "installCommand": "cd frontend && pnpm install",
   "outputDirectory": "frontend/.next",
-  "framework": "nextjs",
-  "rootDirectory": "frontend"
+  "framework": null
 } 
