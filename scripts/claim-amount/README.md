@@ -1,10 +1,13 @@
 # Claim Amount Generator
 
-This directory contains scripts for calculating claim amounts for token migration.
+This directory contains scripts to generate claim amounts for a token migration based on snapshot balances.
 
-## Purpose
+## Overview
 
-The claim amount generator takes the token balances from a Solana snapshot and applies a conversion rate to determine how many tokens each address will receive on Base.
+The claim amount generator:
+1. Reads token balances from the Supabase database
+2. Calculates each user's proportional share of the claim pool
+3. Outputs a JSON file mapping addresses to claim amounts
 
 ## Setup
 
@@ -13,36 +16,27 @@ The claim amount generator takes the token balances from a Solana snapshot and a
 npm install
 ```
 
-2. Create a `.env` file with the following variables:
+2. Create a `.env` file in the parent `scripts` directory with the following variables:
 ```
-# Conversion rate (e.g., 0.1 means users get 0.1 Base tokens for each Solana token)
-CONVERSION_RATE=0.1
+# Supabase credentials
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-# Decimals for the source token (Solana)
-SOURCE_TOKEN_DECIMALS=9
-
-# Decimals for the destination token (Base)
-DESTINATION_TOKEN_DECIMALS=18
-
-# Optional: Supabase credentials for storing results
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
-SUPABASE_TABLENAME=claim_amounts
+# Token configuration
+TOKEN_DECIMALS=18
+TOKEN_SYMBOL=YOUR_TOKEN
+CLAIM_POOL_AMOUNT=100000
 ```
 
-## Input
+## Environment Variables
 
-The script expects a `snapshot_results.json` file in the following format:
-```json
-{
-  "walletAddress1": "1000000000",
-  "walletAddress2": "2500000000"
-}
-```
+| Variable | Description | Default |
+|----------|-------------|---------|
+| TOKEN_DECIMALS | Number of decimal places for the token | 18 |
+| TOKEN_SYMBOL | Symbol used in logs and output | TOKEN |
+| CLAIM_POOL_AMOUNT | Total number of tokens to distribute | 100000 |
 
-You can obtain this file from the `/scripts/snapshot` directory after running a snapshot.
-
-## Running the Script
+## Running the Generator
 
 ```bash
 npm run generate
@@ -50,20 +44,26 @@ npm run generate
 
 ## Output
 
-The script generates `addresses.json` which contains:
+The script generates an `addresses.json` file containing the mapping of EVM addresses to claim amounts. This file is structured as:
+
 ```json
 {
-  "0xMappedAddress1": 100000000000000000,
-  "0xMappedAddress2": 250000000000000000
+  "0xAddress1": "1000000000000000000000",
+  "0xAddress2": "500000000000000000000"
 }
 ```
 
-This output file can be used directly with the Merkle tree generator in the `/scripts/merkle` directory.
+These values are the raw token amounts (including decimals) that will be used in the merkle tree generation.
 
-## Customization
+## Notes
 
-You can modify the script to:
-- Add custom mapping between Solana and EVM addresses
-- Apply different conversion rates for different tiers
-- Add minimum or maximum claim amounts
-- Apply vesting schedules 
+- The distribution is proportional to users' balances from the snapshot
+- A minimum claim amount of 1 token is guaranteed for any user with a positive balance
+- Rounding errors are adjusted to ensure the exact claim pool amount is distributed
+
+## Next Steps
+
+After generating claim amounts:
+1. Use the `addresses.json` file to generate a merkle tree in the merkle directory
+2. Deploy the contract with the merkle root
+3. Configure the frontend with the contract address 

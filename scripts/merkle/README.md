@@ -7,8 +7,8 @@ This directory contains scripts for generating a Merkle tree and proofs for toke
 1. Make sure you have addresses and balances in `addresses.json` with the format:
 ```json
 {
-  "0xUserAddress1": 1000000000000000000,
-  "0xUserAddress2": 2000000000000000000
+  "0xUserAddress1": "1000000000000000000",
+  "0xUserAddress2": "2000000000000000000"
 }
 ```
 
@@ -26,11 +26,11 @@ node generateMerkletree.js
 
 ## Configuration
 
-Create a `.env` file with the following variables for Supabase upload (optional):
+This script uses the `.env` file in the parent `scripts` directory. Make sure it includes Supabase configuration:
 ```
-SUPABASE_URL=https://your-supabase-url.supabase.co
-SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_TABLENAME=merkle
+# Supabase configuration (needed for database storage)
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ```
 
 ## Output Format
@@ -41,11 +41,11 @@ The `merkleTree.json` file will contain:
   "root": "0x...",
   "proofs": {
     "0xAddress1": {
-      "balance": 1000000000000000000,
+      "balance": "1000000000000000000",
       "proof": ["0x...", "0x..."]
     },
     "0xAddress2": {
-      "balance": 2000000000000000000,
+      "balance": "2000000000000000000",
       "proof": ["0x...", "0x..."]
     }
   }

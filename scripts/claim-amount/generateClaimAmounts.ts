@@ -8,13 +8,14 @@ import dotenv from 'dotenv';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from the scripts directory
-dotenv.config({ path: path.join(__dirname, '.env') });
+// Load environment variables from the root directory
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 // Constants
-const DECIMALS = 18;
-const ONE_TOKEN = BigInt(10) ** BigInt(DECIMALS); // 1e18
-const CLAIM_POOL_AMOUNT = BigInt(100000) * ONE_TOKEN; // 100,000 UOS tokens with 18 decimals
+const DECIMALS = parseInt(process.env.TOKEN_DECIMALS || '18', 10);
+const ONE_TOKEN = BigInt(10) ** BigInt(DECIMALS);
+const CLAIM_POOL_AMOUNT = BigInt(process.env.CLAIM_POOL_AMOUNT || '100000') * ONE_TOKEN; // Default: 100,000 tokens
+const TOKEN_SYMBOL = process.env.TOKEN_SYMBOL || 'TOKEN';
 const OUTPUT_FILE = path.join(__dirname, 'addresses.json');
 
 // Initialize Supabase client
@@ -24,6 +25,10 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!supabaseUrl || !supabaseKey) {
   console.error('Missing Supabase credentials in .env file');
   process.exit(1);
+}
+
+if (!process.env.CLAIM_POOL_AMOUNT) {
+  console.warn('CLAIM_POOL_AMOUNT not set in .env file, using default of 100,000 tokens');
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -63,7 +68,7 @@ async function generateClaimAmounts() {
       return sum + balance;
     }, BigInt(0));
 
-    console.log(`Total UOS balance across all users: ${totalBalance.toString()}`);
+    console.log(`Total ${TOKEN_SYMBOL} balance across all users: ${totalBalance.toString()}`);
 
     // 3. Calculate each user's proportional claim amount
     const claimAmounts: Record<string, bigint> = {};
@@ -98,13 +103,13 @@ async function generateClaimAmounts() {
       }
     });
 
-    console.log(`Total calculated claim amount: ${totalClaimAmount} (${Number(totalClaimAmount) / Number(ONE_TOKEN)} UOS)`);
+    console.log(`Total calculated claim amount: ${totalClaimAmount} (${Number(totalClaimAmount) / Number(ONE_TOKEN)} ${TOKEN_SYMBOL})`);
     
     // 4. Adjust for rounding errors to ensure exactly CLAIM_POOL_AMOUNT is distributed
     const adjustment = CLAIM_POOL_AMOUNT - totalClaimAmount;
     
     if (adjustment !== BigInt(0)) {
-      console.log(`Adjustment needed: ${adjustment} (${Number(adjustment) / Number(ONE_TOKEN)} UOS)`);
+      console.log(`Adjustment needed: ${adjustment} (${Number(adjustment) / Number(ONE_TOKEN)} ${TOKEN_SYMBOL})`);
       
       // Find the user with the largest balance to apply the adjustment
       let maxBalanceUser = '';
@@ -141,11 +146,11 @@ async function generateClaimAmounts() {
     const minClaim = Number(claimValues.reduce((a, b) => a < b ? a : b, CLAIM_POOL_AMOUNT)) / Number(ONE_TOKEN);
     
     console.log('\nClaim Amount Statistics:');
-    console.log(`Total Claim Pool: ${CLAIM_POOL_AMOUNT} UOS`);
+    console.log(`Total Claim Pool: ${Number(CLAIM_POOL_AMOUNT) / Number(ONE_TOKEN)} ${TOKEN_SYMBOL}`);
     console.log(`Number of Recipients: ${claimValues.length}`);
-    console.log(`Average Claim: ${avgClaim.toFixed(2)} UOS`);
-    console.log(`Max Claim: ${maxClaim} UOS`);
-    console.log(`Min Claim: ${minClaim} UOS`);
+    console.log(`Average Claim: ${avgClaim.toFixed(2)} ${TOKEN_SYMBOL}`);
+    console.log(`Max Claim: ${maxClaim} ${TOKEN_SYMBOL}`);
+    console.log(`Min Claim: ${minClaim} ${TOKEN_SYMBOL}`);
     
   } catch (error) {
     console.error('Error generating claim amounts:', error);

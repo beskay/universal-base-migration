@@ -3,6 +3,7 @@ CREATE TABLE registered_users (
   id SERIAL PRIMARY KEY,
   solana_address TEXT NOT NULL UNIQUE,
   evm_address TEXT NOT NULL,
+  solana_balance TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

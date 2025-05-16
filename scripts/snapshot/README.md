@@ -14,19 +14,22 @@ This directory contains scripts for taking a snapshot of token balances on Solan
 npm install
 ```
 
-2. Create a `.env` file with the following variables:
+2. Create a `.env` file in the parent `scripts` directory with the following variables:
 ```
 # Solana RPC endpoint (use a reliable endpoint)
-SOLANA_RPC=https://api.mainnet-beta.solana.com
+EXTRNODE_RPC_URL=https://api.mainnet-beta.solana.com
 
-# Token mint address on Solana
+# Required: Token mint address on Solana 
 TOKEN_MINT_ADDRESS=your_token_mint_address
 
-# Optional: Supabase credentials for storing results
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
-SUPABASE_TABLENAME=snapshot_data
+# Supabase credentials for storing results
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ```
+
+## Important Note
+
+The `TOKEN_MINT_ADDRESS` environment variable is required. The script will exit with an error if this is not provided. This allows you to use any Solana token mint for snapshots, not just the UOS token.
 
 ## Running the Snapshot
 
@@ -36,14 +39,7 @@ npm run snapshot
 
 ## Output
 
-The script will output a JSON file `snapshot_results.json` with all token holders and their balances at the time of the snapshot. The format will be:
-
-```json
-{
-  "walletAddress1": "1000000000",
-  "walletAddress2": "2500000000"
-}
-```
+The script will update the `solana_balance` column in the Supabase database for each registered user, storing their token balance at the time of the snapshot.
 
 ## Customization
 
@@ -55,6 +51,6 @@ You can modify the snapshot.ts file to:
 
 ## Next Steps
 
-After generating the snapshot, you can use the output file to:
+After generating the snapshot, you can use the data to:
 1. Generate claim amounts in the claim-amount directory
 2. Create a Merkle tree in the merkle directory 

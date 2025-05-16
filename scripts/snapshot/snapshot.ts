@@ -8,16 +8,22 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from the scripts directory
-dotenv.config({ path: path.join(__dirname, '.env') });
+// Load environment variables from the root directory instead of scripts
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 // Constants
-const UOS_TOKEN_MINT = '79HZeHkX9A5WfBg72ankd1ppTXGepoSGpmkxW63wsrHY';
+const TOKEN_MINT = process.env.TOKEN_MINT_ADDRESS;
 const TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Check for required environment variables
+if (!TOKEN_MINT) {
+  console.error('Missing TOKEN_MINT_ADDRESS in .env file');
+  process.exit(1);
+}
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Missing Supabase credentials in .env file');
@@ -49,7 +55,7 @@ interface SnapshotResult {
   failed: Array<User>;
 }
 
-async function getUosBalance(walletAddress: string, connection: Connection): Promise<TokenBalance> {
+async function getTokenBalance(walletAddress: string, connection: Connection): Promise<TokenBalance> {
   try {
     const wallet = new PublicKey(walletAddress);
     
@@ -58,16 +64,16 @@ async function getUosBalance(walletAddress: string, connection: Connection): Pro
       programId: new PublicKey(TOKEN_PROGRAM_ID),
     });
 
-    // Find UOS token account
-    const uosAccount = tokenAccounts.value.find(
-      (account) => account.account.data.parsed.info.mint === UOS_TOKEN_MINT
+    // Find token account for the specified mint
+    const tokenAccount = tokenAccounts.value.find(
+      (account) => account.account.data.parsed.info.mint === TOKEN_MINT
     );
 
-    if (!uosAccount) {
-      return { amount: "0", decimals: 9 };  // UOS has 9 decimals
+    if (!tokenAccount) {
+      return { amount: "0", decimals: 9 };  // Default to 9 decimals
     }
 
-    const tokenAmount = uosAccount.account.data.parsed.info.tokenAmount;
+    const tokenAmount = tokenAccount.account.data.parsed.info.tokenAmount;
     return {
       amount: tokenAmount.amount,
       decimals: tokenAmount.decimals
@@ -93,7 +99,7 @@ async function processUserBatch(batch: User[]): Promise<SnapshotResult> {
 
       try {
         const connection = new Connection(endpoint);
-        balance = await getUosBalance(user.solana_address, connection);
+        balance = await getTokenBalance(user.solana_address, connection);
         break;
       } catch (error) {
         console.warn(`Failed to get balance from ${endpoint} for ${user.solana_address}`);
@@ -133,7 +139,7 @@ async function processUserBatch(batch: User[]): Promise<SnapshotResult> {
 }
 
 async function takeSnapshot() {
-  console.log('Starting UOS balance snapshot...');
+  console.log(`Starting token balance snapshot for mint: ${TOKEN_MINT}...`);
   const startTime = Date.now();
   
   try {
@@ -198,11 +204,11 @@ async function takeSnapshot() {
       const maxBalance = Math.max(...balances);
       const minBalance = Math.min(...balances);
 
-      console.log('\nBalance Statistics (in UOS units):');
-      console.log(`Total UOS: ${totalBalance.toFixed(9)}`);
-      console.log(`Average UOS: ${avgBalance.toFixed(9)}`);
-      console.log(`Max UOS: ${maxBalance.toFixed(9)}`);
-      console.log(`Min UOS: ${minBalance.toFixed(9)}`);
+      console.log('\nBalance Statistics:');
+      console.log(`Total Token Balance: ${totalBalance.toFixed(9)}`);
+      console.log(`Average Token Balance: ${avgBalance.toFixed(9)}`);
+      console.log(`Max Token Balance: ${maxBalance.toFixed(9)}`);
+      console.log(`Min Token Balance: ${minBalance.toFixed(9)}`);
     }
 
   } catch (error) {

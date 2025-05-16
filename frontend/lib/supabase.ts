@@ -1,10 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Load from root .env via next.config.js
+const supabaseUrl = process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key';
 
-// Create a simple Supabase client
+// Create client
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default supabase;
@@ -23,6 +23,7 @@ export async function getMerkleProof(address: string): Promise<MerkleProof | nul
 
     // Add a query parameter to check if the address exists (case-insensitive approach)
     const lowerAddress = address.toLowerCase();
+    
     // Using a special header to bypass RLS
     const directUrl = `${supabaseUrl}/rest/v1/merkle?select=*`;
     console.log(`Making direct API request to: ${directUrl}`);

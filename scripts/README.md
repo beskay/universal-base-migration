@@ -15,46 +15,56 @@ scripts/
 └── merkle/         # Scripts for generating Merkle tree and proofs
 ```
 
+## Environment Setup
+
+Create a `.env` file in the root `scripts` directory with the following variables:
+
+```
+# Supabase configuration
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Solana configuration
+EXTRNODE_RPC_URL=https://api.mainnet-beta.solana.com
+
+# Token configuration for snapshot
+TOKEN_MINT_ADDRESS=your_solana_token_mint_address
+
+# Token configuration for claim amount calculation
+TOKEN_DECIMALS=18
+TOKEN_SYMBOL=YOUR_TOKEN
+CLAIM_POOL_AMOUNT=100000
+```
+
+You can also refer to the `.env.example` file in this directory.
+
 ## Complete Migration Workflow
 
 ### Step 1: Take a snapshot of token holders on Solana
 
 ```bash
-cd snapshot
-npm install
-# Configure .env file
 npm run snapshot
-# This generates snapshot_results.json
 ```
 
 ### Step 2: Calculate claim amounts for Base
 
 ```bash
-cd ../claim-amount
-npm install
-# Copy snapshot_results.json from the snapshot directory
-# Configure .env file with conversion rate
-npm run generate
-# This generates addresses.json
+npm run claim-amount
 ```
 
 ### Step 3: Generate Merkle tree for claiming
 
 ```bash
-cd ../merkle
-npm install
-# Copy addresses.json from the claim-amount directory
-node generateMerkletree.js
-# This generates merkleTree.json with the root and proofs
+npm run merkle
 ```
 
 ### Step 4: Deploy the contract with the Merkle root
 
 Use the Merkle root from the merkleTree.json file when deploying your token contract.
 
-## Database Integration (Optional)
+## Database Integration
 
-These scripts can optionally store results in Supabase. Configure your Supabase credentials in each .env file if you want to use this feature.
+These scripts store results in Supabase. Configure your Supabase credentials in the .env file.
 
 ## Customization
 

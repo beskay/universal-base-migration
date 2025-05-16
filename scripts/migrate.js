@@ -13,6 +13,11 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const readline = require('readline');
+const dotenv = require('dotenv');
+
+// Load environment variables
+const ENV_FILE = path.join(__dirname, '.env');
+dotenv.config({ path: ENV_FILE });
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -40,6 +45,61 @@ const colors = {
   magenta: '\x1b[35m',
   cyan: '\x1b[36m'
 };
+
+/**
+ * Check if the .env file is configured properly
+ */
+function checkEnvConfig() {
+  console.log(`${colors.cyan}Checking .env configuration...${colors.reset}`);
+  
+  if (!fs.existsSync(ENV_FILE)) {
+    console.log(`${colors.red}Error: .env file not found.${colors.reset}`);
+    console.log(`Please create a .env file in the scripts directory with the required configuration.`);
+    console.log(`See .env.example for the required fields.`);
+    return false;
+  }
+  
+  const envVars = [
+    { name: 'SUPABASE_URL', step: 'all steps (database storage)' },
+    { name: 'SUPABASE_SERVICE_ROLE_KEY', step: 'all steps (database storage)' },
+    { name: 'EXTRNODE_RPC_URL', step: 'snapshot' },
+    { name: 'TOKEN_MINT_ADDRESS', step: 'snapshot', required: true },
+    { name: 'TOKEN_DECIMALS', step: 'claim amount calculation', defaultValue: '18' },
+    { name: 'TOKEN_SYMBOL', step: 'claim amount calculation', defaultValue: 'TOKEN' },
+    { name: 'CLAIM_POOL_AMOUNT', step: 'claim amount calculation', defaultValue: '100000' }
+  ];
+  
+  let allValid = true;
+  const missingRequired = [];
+  
+  envVars.forEach(v => {
+    const value = process.env[v.name];
+    if (!value && v.required) {
+      allValid = false;
+      missingRequired.push(v);
+    } else if (!value && !v.defaultValue) {
+      console.log(`${colors.yellow}Warning: ${v.name} is not set. This is needed for ${v.step}.${colors.reset}`);
+    } else if (!value && v.defaultValue) {
+      console.log(`${colors.yellow}Note: ${v.name} is not set, using default value (${v.defaultValue}) for ${v.step}.${colors.reset}`);
+    }
+  });
+  
+  if (missingRequired.length > 0) {
+    console.log(`${colors.red}Error: The following required environment variables are missing:${colors.reset}`);
+    missingRequired.forEach(v => {
+      console.log(`  - ${v.name} (required for ${v.step})`);
+    });
+    return false;
+  }
+  
+  if (allValid) {
+    console.log(`${colors.green}Environment configuration looks good!${colors.reset}`);
+  } else {
+    console.log(`${colors.yellow}Environment configuration has warnings, but can proceed.${colors.reset}`);
+  }
+  
+  return true;
+}
 
 /**
  * Execute a command in a specific directory
@@ -88,24 +148,14 @@ async function runSnapshot() {
     await executeCommand('npm', ['install'], SNAPSHOT_DIR);
     
     // Run the snapshot script
-    console.log(`\n${colors.cyan}Running Solana token snapshot...${colors.reset}`);
+    console.log(`\n${colors.cyan}Running Solana token snapshot for ${process.env.TOKEN_MINT_ADDRESS}...${colors.reset}`);
     await executeCommand('npm', ['run', 'snapshot'], SNAPSHOT_DIR);
     
     console.log(`\n${colors.green}Snapshot step completed!${colors.reset}`);
     
     // Check if Supabase is being used
-    const envPath = path.join(SNAPSHOT_DIR, '.env');
-    if (fs.existsSync(envPath)) {
-      const envContent = fs.readFileSync(envPath, 'utf8');
-      if (envContent.includes('SUPABASE_URL=') && !envContent.includes('SUPABASE_URL=\n')) {
-        console.log(`${colors.cyan}Snapshot results stored in Supabase.${colors.reset}`);
-      }
-    }
-    
-    // Check for the results file
-    const snapshotResultsPath = path.join(SNAPSHOT_DIR, SNAPSHOT_RESULTS);
-    if (fs.existsSync(snapshotResultsPath)) {
-      console.log(`${colors.cyan}Snapshot results saved to: ${snapshotResultsPath}${colors.reset}`);
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.log(`${colors.cyan}Snapshot results stored in Supabase.${colors.reset}`);
     }
     
     return true;
@@ -122,18 +172,6 @@ async function calculateClaimAmounts() {
   console.log(`\n${colors.bright}${colors.green}=== STEP 2: Calculate Claim Amounts for Base ===${colors.reset}\n`);
   
   try {
-    // Check if snapshot results exist as a file, copy if it does
-    const sourcePath = path.join(SNAPSHOT_DIR, SNAPSHOT_RESULTS);
-    const destPath = path.join(CLAIM_AMOUNT_DIR, SNAPSHOT_RESULTS);
-    
-    if (fs.existsSync(sourcePath)) {
-      // Copy file from snapshot to claim-amount directory
-      fs.copyFileSync(sourcePath, destPath);
-      console.log(`Copied ${SNAPSHOT_RESULTS} to claim-amount directory.`);
-    } else {
-      console.log(`${colors.yellow}Note:${colors.reset} No snapshot results file found. The script will use Supabase if configured.`);
-    }
-    
     // Install dependencies
     await executeCommand('npm', ['install'], CLAIM_AMOUNT_DIR);
     
@@ -179,7 +217,7 @@ async function generateMerkleTree() {
     
     // Run the Merkle tree generator
     console.log(`\n${colors.cyan}Generating Merkle tree...${colors.reset}`);
-    await executeCommand('node', ['index.js'], MERKLE_DIR);
+    await executeCommand('npm', ['run', 'generate'], MERKLE_DIR);
     
     // Check if the Merkle tree file exists
     const merkleTreePath = path.join(MERKLE_DIR, MERKLE_TREE_JSON);
@@ -196,8 +234,7 @@ async function generateMerkleTree() {
     console.log(`\n${colors.yellow}IMPORTANT:${colors.reset} You will need to deploy your contract with this Merkle root.`);
     
     // Check if Supabase is configured
-    const envPath = path.join(MERKLE_DIR, '.env');
-    if (fs.existsSync(envPath) && fs.readFileSync(envPath, 'utf8').includes('SUPABASE_URL=')) {
+    if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       console.log(`${colors.cyan}Merkle proofs have also been uploaded to Supabase.${colors.reset}`);
     }
     
@@ -215,6 +252,16 @@ async function main() {
   console.log(`${colors.bright}${colors.cyan}=====================================${colors.reset}`);
   console.log(`${colors.bright}${colors.cyan}  Solana to Base Token Migration${colors.reset}`);
   console.log(`${colors.bright}${colors.cyan}=====================================${colors.reset}`);
+  
+  // Check environment configuration first
+  const configValid = checkEnvConfig();
+  if (!configValid) {
+    const proceed = await askYesNo('Would you like to proceed anyway?');
+    if (!proceed) {
+      rl.close();
+      return;
+    }
+  }
   
   const runAll = await askYesNo('Would you like to run the complete migration workflow?');
   
