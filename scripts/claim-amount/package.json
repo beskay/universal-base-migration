@@ -1,14 +1,13 @@
 {
-  "name": "uos-snapshot-scripts",
+  "name": "uos-claim-amount-scripts",
   "version": "1.0.0",
-  "description": "Scripts for taking UOS token balance snapshots",
-  "main": "snapshot.js",
+  "description": "Scripts for calculating token claim amounts",
+  "main": "generateClaimAmounts.js",
   "type": "module",
   "scripts": {
-    "snapshot": "node --loader ts-node/esm snapshot.ts"
+    "generate": "node --loader ts-node/esm generateClaimAmounts.ts"
   },
   "dependencies": {
-    "@solana/web3.js": "^1.87.6",
     "@supabase/supabase-js": "^2.39.0",
     "dotenv": "^16.3.1",
     "typescript": "^5.8.2"
@@ -17,4 +16,4 @@
     "@types/node": "^20.17.30",
     "ts-node": "^10.9.2"
   }
-}
+} 

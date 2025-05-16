@@ -226,7 +226,11 @@ function WalletConnectorInner() {
             <div className="flex items-center justify-between mb-2">
               <p className="label text-gray-700">Base Wallet</p>
               {!isEvmConnected && !showRainbowKit && <CustomConnectButton />}
-              {(showRainbowKit || isEvmConnected) && <ConnectButton />}
+              {(showRainbowKit || isEvmConnected) && (
+                <div className="min-w-[180px]">
+                  <ConnectButton />
+                </div>
+              )}
             </div>
             {isEvmConnected && evmAddress && (
               <div className="flex items-center mt-2 w-full">

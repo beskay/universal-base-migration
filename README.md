@@ -34,8 +34,9 @@ The migration is implemented through several key components:
 │   ├── app/          # Next.js app router
 │   ├── components/   # React components
 │   └── lib/          # Utility functions
-├── scripts/          # Deployment and data processing scripts
+├── scripts/          # Token migration scripts
 │   ├── snapshot/     # Solana snapshot tools
+│   ├── claim-amount/ # Claim amount calculation
 │   └── merkle/       # Merkle proof generation
 └── docs/            # Documentation
 ```

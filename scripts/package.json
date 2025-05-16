@@ -1,12 +1,18 @@
 {
-  "name": "scripts",
+  "name": "token-migration-scripts",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Scripts for migrating tokens from Solana to Base",
+  "main": "migrate.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "migrate": "node migrate.js",
+    "snapshot": "cd snapshot && npm run snapshot",
+    "claim-amount": "cd claim-amount && npm run generate",
+    "merkle": "cd merkle && npm run generate"
   },
-  "keywords": [],
+  "bin": {
+    "token-migrate": "./migrate.js"
+  },
+  "keywords": ["solana", "base", "token", "migration", "merkle"],
   "author": "",
   "license": "MIT",
   "packageManager": "pnpm@10.4.1",

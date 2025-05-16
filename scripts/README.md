@@ -1,58 +1,61 @@
-# Scripts
+# Token Migration Scripts
 
-## Installation
+This directory contains scripts for migrating a token from Solana to Base. The process involves:
 
-First, install dependencies:  
+1. Taking a snapshot of token holders on Solana
+2. Calculating claim amounts for Base
+3. Generating a Merkle tree for secure claiming
 
-```sh
-pnpm install
+## Directory Structure
+
+```
+scripts/
+├── snapshot/       # Scripts for taking a snapshot of token holders on Solana
+├── claim-amount/   # Scripts for calculating claim amounts on Base
+└── merkle/         # Scripts for generating Merkle tree and proofs
 ```
 
-### Environment Variables  
+## Complete Migration Workflow
 
-Create a `.env` file in the root directory and define the following variables:  
+### Step 1: Take a snapshot of token holders on Solana
 
-```sh
-SUPABASE_URL=https://your-supabase-url
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_TABLENAME=your-table-name
+```bash
+cd snapshot
+npm install
+# Configure .env file
+npm run snapshot
+# This generates snapshot_results.json
 ```
 
-#### Getting Supabase Credentials  
+### Step 2: Calculate claim amounts for Base
 
-1. Go to your **Supabase dashboard**.  
-2. Click on **Settings** in the sidebar.  
-3. Navigate to **API**.  
-4. Copy the **Project URL** and **Anon Public API Key** and paste them into your `.env` file.  
-
----
-
-## Creating the Database  
-
-1. Create a new project in Supabase (or use an existing one).  
-2. Create a **new table** with the same name as defined in your `.env` file.  
-3. Add the following columns:  
-
-| Column Name | Type  | Notes  |
-|------------|-------|--------|
-| `address`  | `text`  | Stores wallet addresses |
-| `balance`  | `int8`  | Stores token balances  |
-| `proof`    | `text[]` | Stores Merkle proofs (must be an **array**) |
-
-**Important:** Ensure that the `proof` column is defined as an **array type**.
-
----
-
-## Generating the Merkle Tree  
-
-Run the following command:  
-
-```sh
-node index.js
+```bash
+cd ../claim-amount
+npm install
+# Copy snapshot_results.json from the snapshot directory
+# Configure .env file with conversion rate
+npm run generate
+# This generates addresses.json
 ```
 
-This will:  
-- Load wallet addresses and balances from `addresses.json`.  
-- Generate a **Merkle tree** and compute proofs.  
-- Save the **Merkle root and proofs** to `merkleTree.json`.  
-- (Optional) Upload the data to Supabase.  
+### Step 3: Generate Merkle tree for claiming
+
+```bash
+cd ../merkle
+npm install
+# Copy addresses.json from the claim-amount directory
+node generateMerkletree.js
+# This generates merkleTree.json with the root and proofs
+```
+
+### Step 4: Deploy the contract with the Merkle root
+
+Use the Merkle root from the merkleTree.json file when deploying your token contract.
+
+## Database Integration (Optional)
+
+These scripts can optionally store results in Supabase. Configure your Supabase credentials in each .env file if you want to use this feature.
+
+## Customization
+
+Each script can be customized to fit your specific token migration needs. See the README in each directory for details.

@@ -1,0 +1,16 @@
+{
+  "name": "uos-merkle-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for generating Merkle tree and proofs",
+  "main": "generateMerkletree.js",
+  "scripts": {
+    "generate": "node generateMerkletree.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.3",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.13.5",
+    "keccak256": "^1.0.6",
+    "merkletreejs": "^0.4.1"
+  }
+} 

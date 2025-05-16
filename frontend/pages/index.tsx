@@ -2,6 +2,7 @@ import React from 'react';
 import Head from 'next/head';
 import Navigation from '../components/Navigation';
 import WalletConnector from '../components/WalletConnector';
+import Card from '../components/Card';
 
 export default function Home() {
   return (
