@@ -1,26 +1,34 @@
-# UOS/WETH Migration
+# Universal Migration Tool
 
-This repository contains the smart contracts and frontend application for the UOS/WETH token migration from Solana to Base. The migration process involves taking a snapshot of SOL/UOS token holders, generating Merkle proofs for claims, and implementing a secure claim system.
+A comprehensive tool for migrating tokens from Solana to Base blockchain, providing a seamless experience for token holders.
+
+## Core Features
+
+- **Cross-Chain Migration**: Move tokens securely from Solana to Base with integrity validation
+- **Merkle Proof Verification**: Secure claim system using cryptographic proofs
+- **Snapshot Generation**: Automated tools to capture token holder state on Solana
+- **User-Friendly Interface**: Clean frontend for simplified claim process
+
+## Technology Stack
+
+### Backend
+- **Supabase**: Database and authentication for migration records
+- **Merkle Trees**: Cryptographic proof generation for secure claims
+- **Smart Contracts**: Solidity contracts for on-chain verification
+
+### Frontend
+- **Next.js**: React framework for the user interface
+- **Vercel**: Deployment platform with CI/CD integration
+- **Web3 Integration**: Wallet connection for blockchain interactions
 
 ## Implementation Overview
 
-The migration is implemented through several key components:
+The migration process follows these steps:
 
-### Smart Contracts (`/contracts`)
-- Merkle claim contract for secure token distribution
-- WETH token contract with migration functionality
-- Verification system for Merkle proofs
-
-### Frontend (`/frontend`)
-- Next.js application for token claims
-- Privy wallet integration for secure authentication
-- Real-time claim status and balance checking
-- Merkle proof verification on-chain
-
-### Scripts (`/scripts`)
-- Snapshot generation from Solana blockchain
-- Merkle tree generation for claims
-- Data processing utilities for migration
+1. **Snapshot Generation**: Capture token balances on Solana
+2. **Merkle Tree Creation**: Generate proofs for all eligible addresses
+3. **Deployment**: Smart contracts deployed to Base blockchain
+4. **Claim System**: User-friendly interface for claiming migrated tokens
 
 ## Project Structure
 
@@ -38,10 +46,25 @@ The migration is implemented through several key components:
 │   ├── snapshot/     # Solana snapshot tools
 │   ├── claim-amount/ # Claim amount calculation
 │   └── merkle/       # Merkle proof generation
-└── docs/            # Documentation
 ```
 
-## Quick Start
+## Deployment
+
+The application is deployed on Vercel, providing:
+- Automatic deployments from the main branch
+- Custom domain configuration
+- Performance monitoring
+- Edge network distribution
+
+## Supabase Integration
+
+Supabase powers the backend with:
+- User authentication
+- Migration records storage
+- API endpoints for claim status
+- Real-time updates for claim process
+
+## Development
 
 ### Prerequisites
 - Node.js >= 18
@@ -49,7 +72,7 @@ The migration is implemented through several key components:
 - Foundry (for contract development)
 - Solana CLI tools (for snapshot generation)
 
-### Installation
+### Setup
 ```bash
 # Install dependencies
 pnpm install
@@ -64,94 +87,29 @@ pnpm test
 ### Environment Variables
 Copy `.env.example` to `.env` and fill in the required variables:
 ```bash
-# Privy
-NEXT_PUBLIC_PRIVY_APP_ID=
+# Supabase (for database storage)
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_ANON_KEY=
 
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+# Solana Configuration (for snapshot)
+EXTRNODE_RPC_URL=
+TOKEN_MINT_ADDRESS=
 
-# Contract
-NEXT_PUBLIC_CONTRACT_ADDRESS=
-NEXT_PUBLIC_UOS_TOKEN_ADDRESS=
+# Token Configuration (for claim amount calculation)
+TOKEN_DECIMALS=18
+TOKEN_SYMBOL=TOKEN
+CLAIM_POOL_AMOUNT=100000
+MIGRATION_RATIO=0.1
+FIXED_RATIO=false
 ```
 
-## Features
+## Security Features
 
-- SOL/UOS holder snapshot
-- 0.1:1 UOS/WETH airdrop
-- Privy wallet integration
-- Merkle proof verification
-- Real-time claim status updates
-- Secure authentication system
-
-## Tokenomics & Migration
-
-The UOS token serves as the core utility and governance token for the Universal Operating System (uOS) protocol, a meta-framework that provides a unified interface for interacting with multiple AI platforms. The protocol facilitates seamless communication and interoperability between technologies while preserving their native functionality.
-
-### Total Supply: 1,000,000 UOS
-
-The token distribution is structured as follows:
-
-- **SOL/UOS Migration (10%)**: 100,000 UOS allocated for the transition from Solana to Base
-  - All UOS/SOL holders receive 0.1:1 UOS/WETH
-  - Claims available via uos.earth
-  - Immediate availability upon launch
-
-- **Protocol Emissions (60%)**: 600,000 UOS for vote-escrow mechanism
-  - Lock periods: 1 week to 2 years
-  - Weekly reward distributions
-  - Revenue sharing from protocol fees
-  - Multiple lock positions via veNFTs
-
-- **Development & Operations (20%)**: 200,000 UOS
-  - Treasury: 10% (100,000 UOS) - DAO governed with 4-year linear vesting
-  - Team: 10% (100,000 UOS) - 4-year linear vesting via Sablier
-
-- **Liquidity (10%)**: 100,000 UOS
-  - Initial DEX Liquidity: 1% (10,000 UOS) for Uniswap v2 pair bootstrapping
-  - LP Staking Rewards: 9% (90,000 UOS) distributed through Pool2
-
-### Revenue Streams
-The token facilitates multiple revenue streams including:
-- App Store Revenue: Fees from app sales and subscriptions
-- Premium OS Features: Subscription fees for enhanced storage and features
-- Agent Task Fees: Fees from AI agent operations
-- Tokenized IP Revenue: Royalties from AI-generated content
-- Infrastructure Fees: Hosting and OS usage fees
-
-## Development
-
-### Frontend
-```bash
-cd frontend
-pnpm dev
-```
-
-### Contracts
-```bash
-cd contracts
-forge test
-```
-
-### Scripts
-```bash
-cd scripts
-pnpm generate-merkle
-```
-
-## Deployment
-
-The application is deployed on Vercel. Each push to `main` triggers a new deployment.
-
-## Security
-
-The migration process implements several security measures:
 - Merkle proof verification for secure claims
-- Privy wallet integration for secure authentication
+- Secure wallet authentication
 - Rate limiting on claim requests
 - Multi-sig treasury management
-- Linear vesting for team and treasury allocations
 
 ## License
 
