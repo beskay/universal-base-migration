@@ -66,7 +66,9 @@ function checkEnvConfig() {
     { name: 'TOKEN_MINT_ADDRESS', step: 'snapshot', required: true },
     { name: 'TOKEN_DECIMALS', step: 'claim amount calculation', defaultValue: '18' },
     { name: 'TOKEN_SYMBOL', step: 'claim amount calculation', defaultValue: 'TOKEN' },
-    { name: 'CLAIM_POOL_AMOUNT', step: 'claim amount calculation', defaultValue: '100000' }
+    { name: 'CLAIM_POOL_AMOUNT', step: 'claim amount calculation', defaultValue: '100000' },
+    { name: 'MIGRATION_RATIO', step: 'claim amount calculation', defaultValue: '0.1' },
+    { name: 'FIXED_RATIO', step: 'claim amount calculation', defaultValue: 'false' }
   ];
   
   let allValid = true;
