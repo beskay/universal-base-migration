@@ -1,14 +1,15 @@
 const fs = require("fs");
-const supa = require("@supabase/supabase-js");
+const { createClient } = require("@supabase/supabase-js");
 const tree = require("./generateMerkletree");
 const path = require("path");
 
-require("dotenv").config();
+// Explicitly load environment variables from root .env
+require("dotenv").config({ path: path.join(__dirname, "../.env") });
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const SUPABASE_TABLENAME = process.env.SUPABASE_TABLENAME;
 
-const supabase = supa.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Function to send batch data to Supabase
 async function sendDataBatch(entries) {

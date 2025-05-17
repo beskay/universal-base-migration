@@ -16,7 +16,7 @@ const readline = require('readline');
 const dotenv = require('dotenv');
 
 // Load environment variables
-const ENV_FILE = path.join(__dirname, '.env');
+const ENV_FILE = path.join(__dirname, '../.env');
 dotenv.config({ path: ENV_FILE });
 
 const rl = readline.createInterface({
