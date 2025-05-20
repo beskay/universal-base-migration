@@ -2,7 +2,7 @@ require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-foundry");
 
 require('dotenv').config();
-const { API_ETHERSCAN, API_BASESCAN, RPC_SEPOLIA, RPC_BASE, PK, PK_BASE } = process.env;
+const { RPC_BASE, PK_BASE } = process.env;
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -30,22 +30,5 @@ module.exports = {
       url: RPC_BASE,
       accounts: [`0x${PK_BASE}`],
     },
-    sepolia: {
-      url: RPC_SEPOLIA,
-      accounts: [`0x${PK}`],
-    },
-  },
-  etherscan: {
-    apiKey: API_BASESCAN,
-    customChains: [
-      {
-        network: "sepolia",
-        chainId: 11155111,
-        urls: {
-          apiURL: "https://api-sepolia.etherscan.io/api",
-          browserURL: "https://sepolia.etherscan.io",
-        },
-      }
-    ],
   },
 };
